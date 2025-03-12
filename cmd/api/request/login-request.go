@@ -5,6 +5,7 @@ import (
 )
 
 type LoginRequest struct {
+	Name     string
 	Email    string
 	Password string
 }

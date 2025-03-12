@@ -24,8 +24,8 @@ func (r *LoginResponse) Unmarshal(data []byte) error {
 }
 
 type LoginData struct {
-	ID        int64  `json:"id"`
-	Token     string `json:"token"`
-	Email     string `json:"email"`
-	CreatedAt string `json:"createdAt"`
+	ID    int64  `json:"id"`
+	Token string `json:"token"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
