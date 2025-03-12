@@ -16,11 +16,11 @@ services:
 
     db:
         image: postgres:16.3
-        container_name: postgres-db
+        container_name: ecommerce-db
         environment:
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: Rohanwebid96dong
-            POSTGRES_DB: api-sql-course
+            POSTGRES_DB: ecommerce-db
         ports:
             # 5433 is for host / local machine
             # 5432 is for container
