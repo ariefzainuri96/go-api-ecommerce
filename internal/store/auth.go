@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 
 	"golang.org/x/crypto/bcrypt"
@@ -33,7 +34,7 @@ func (store *AuthStore) Login(ctx context.Context, body request.LoginRequest) (r
 	err = bcrypt.CompareHashAndPassword([]byte(password), []byte(body.Password))
 
 	if err != nil {
-		return login, err
+		return login, errors.New("Invalid email or password!")
 	}
 
 	token, err := middleware.GenerateToken(body.Email, login.ID)
@@ -48,7 +49,7 @@ func (store *AuthStore) Login(ctx context.Context, body request.LoginRequest) (r
 }
 
 func (store *AuthStore) Register(ctx context.Context, body request.LoginRequest) error {
-	query := `INSERT INTO users (name, email, password) VALUES ($1, $2)`
+	query := `INSERT INTO users (name, email, password) VALUES ($1, $2, $3)`
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
 

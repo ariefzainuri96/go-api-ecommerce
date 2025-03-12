@@ -5,9 +5,9 @@ import (
 )
 
 type LoginRequest struct {
-	Name     string
-	Email    string
-	Password string
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func (r LoginRequest) Marshal() ([]byte, error) {
