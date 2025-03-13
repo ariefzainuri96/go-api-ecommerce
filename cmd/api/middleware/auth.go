@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"os"
@@ -10,18 +11,30 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Key to store user information in context
+type contextKey string
+
+const UserContextKey contextKey = "user"
+
 // Generate JWT Token
-func GenerateToken(email string, id int64) (string, error) {
+func GenerateToken(email string, isAdmin bool, id int64) (string, error) {
 	jwtSecret := strings.TrimSpace(os.Getenv("SECRET_KEY"))
 
 	claims := jwt.MapClaims{
-		"id":    id,
-		"email": email,
-		"exp":   time.Now().Add(time.Hour * 24 * 30).Unix(), // Token valid for 30 day
+		"id":       id,
+		"email":    email,
+		"is_admin": isAdmin,
+		"exp":      time.Now().Add(time.Hour * 24 * 30).Unix(), // Token valid for 30 day
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(jwtSecret))
+}
+
+// Function to get user data from request
+func GetUserFromContext(r *http.Request) (map[string]any, bool) {
+	userData, ok := r.Context().Value(UserContextKey).(map[string]any)
+	return userData, ok
 }
 
 // Auth Middleware
@@ -50,6 +63,45 @@ func Authentication(next http.Handler) http.Handler {
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		// Extract claims from the token
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			http.Error(w, "Invalid Token Claims", http.StatusUnauthorized)
+			return
+		}
+
+		// Extract data from token
+		id, _ := claims["id"].(float64) // JWT stores numbers as float64
+		email, _ := claims["email"].(string)
+		isAdmin, _ := claims["is_admin"].(bool)
+
+		// Store the user data in the request context
+		ctx := context.WithValue(r.Context(), UserContextKey, map[string]any{
+			"id":       int64(id),
+			"email":    email,
+			"is_admin": isAdmin,
+		})
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func AdminHandler(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := GetUserFromContext(r)
+
+		if !ok {
+			http.Error(w, "Unauthorized, please re login!", http.StatusUnauthorized)
+			return
+		}
+
+		isAdmin := user["is_admin"].(bool)
+
+		if !isAdmin {
+			http.Error(w, "You are not authorized to perform this action!", http.StatusForbidden)
+			return
+		}
+
+		next(w, r)
+	}
 }

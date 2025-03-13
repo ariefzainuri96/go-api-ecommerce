@@ -18,14 +18,15 @@ type AuthStore struct {
 }
 
 func (store *AuthStore) Login(ctx context.Context, body request.LoginRequest) (response.LoginData, error) {
-	query := `SELECT name, email, password FROM users WHERE email = $1;`
+	query := `SELECT name, email, password, is_admin FROM users WHERE email = $1;`
 
 	row := store.db.QueryRowContext(ctx, query, body.Email)
 
 	var login response.LoginData
 	var password string
+	var isAdmin bool
 
-	err := row.Scan(&login.Name, &login.Email, &password)
+	err := row.Scan(&login.Name, &login.Email, &password, &isAdmin)
 
 	if err != nil {
 		return login, err
@@ -37,7 +38,7 @@ func (store *AuthStore) Login(ctx context.Context, body request.LoginRequest) (r
 		return login, errors.New("Invalid email or password!")
 	}
 
-	token, err := middleware.GenerateToken(body.Email, login.ID)
+	token, err := middleware.GenerateToken(body.Email, isAdmin, login.ID)
 
 	if err != nil {
 		return login, err
