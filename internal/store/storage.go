@@ -12,8 +12,9 @@ type Storage struct {
 	Product interface {
 		GetAllProduct(context.Context) ([]response.Product, error)
 		AddProduct(context.Context, *request.AddProductRequest) error
-		// DeleteProduct(context.Context, int64) (response.Blog, error)
-		// UpdateProduct(context.Context, int64) error
+		DeleteProduct(context.Context, int64) error
+		PatchProduct(context.Context, int64, map[string]any) error
+		SearchProduct(context.Context, string) ([]response.Product, error)
 	}
 	Auth interface {
 		Login(context.Context, request.LoginRequest) (response.LoginData, error)

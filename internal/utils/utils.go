@@ -11,7 +11,7 @@ func UpdateStruct(existing interface{}, updates interface{}) {
 	existingVal := reflect.ValueOf(existing).Elem()
 	updatesVal := reflect.ValueOf(updates)
 
-	for i := 0; i < updatesVal.NumField(); i++ {
+	for i := range updatesVal.NumField() {
 		field := updatesVal.Field(i)
 
 		// Skip zero values (default values)

@@ -36,3 +36,13 @@
 ## db connection on host / local machine
 
 1. use address localhost:5433 for connecting to db
+
+## POSTGRES
+
+1. For now the postgres using extension pg_trgm, if you want to disable the extension, please run this sql command first
+
+Before disabling pg_trgm, remove any indexes using gin_trgm_ops:
+
+DROP INDEX IF EXISTS idx_products_name_trgm;
+
+DROP EXTENSION IF EXISTS pg_trgm CASCADE;

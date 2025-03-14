@@ -3,6 +3,9 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"log"
+	"strings"
 
 	"github.com/ariefzainuri96/go-api-blogging/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
@@ -77,17 +80,87 @@ func (s *ProductStore) GetAllProduct(ctx context.Context) ([]response.Product, e
 	return products, nil
 }
 
-// func (s *ProductStore) DeleteById(ctx context.Context, id int64) error {
-// 	query := `
-// 		DELETE FROM blogs
-// 		WHERE id = $1;
-// 	`
+func (s *ProductStore) DeleteProduct(ctx context.Context, id int64) error {
+	query := `
+		DELETE FROM products
+		WHERE id = $1;
+	`
 
-// 	_, err := s.db.ExecContext(ctx, query, id)
+	result, err := s.db.ExecContext(ctx, query, id)
 
-// 	if err != nil {
-// 		return err
-// 	}
+	if err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	row, err := result.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if row == 0 {
+		return fmt.Errorf("No product found with id %d", id)
+	}
+
+	return nil
+}
+
+func (s *ProductStore) PatchProduct(ctx context.Context, id int64, patch map[string]any) error {
+	query := "UPDATE products SET "
+	args := []any{}
+	i := 1
+
+	for key, value := range patch {
+		query += fmt.Sprintf("%s = $%d,", key, i)
+		args = append(args, value)
+		i++
+	}
+
+	// Remove trailing comma and add WHERE clause
+	query = strings.TrimSuffix(query, ",")
+	query += fmt.Sprintf(" WHERE id = $%d", i)
+	args = append(args, id)
+
+	// Execute the query
+	_, err := s.db.ExecContext(ctx, query, args...)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ProductStore) SearchProduct(ctx context.Context, search string) ([]response.Product, error) {
+	var products []response.Product
+
+	query := `
+		SELECT * FROM products
+		WHERE LOWER (name) ILIKE $1
+		OR LOWER (description) ILIKE $1;
+	`
+
+	searchTerm := "%" + search + "%"
+
+	rows, err := s.db.QueryContext(ctx, query, searchTerm)
+
+	if err != nil {
+		log.Println(err.Error())
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var product response.Product
+		err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Quantity, &product.CreatedAt)
+
+		if err != nil {
+			return nil, err
+		}
+
+		products = append(products, product)
+	}
+
+	return products, nil
+}
