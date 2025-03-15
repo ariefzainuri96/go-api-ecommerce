@@ -22,6 +22,9 @@ type Storage struct {
 	}
 	Cart interface {
 		AddToCart(context.Context, request.AddToCartRequest) error
+		GetCart(context.Context, int64) ([]response.Cart, error)
+		DeleteFromCart(context.Context, int64) error
+		UpdateQuantityCart(context.Context, int64, int64) error
 	}
 	// create more interface here
 }

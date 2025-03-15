@@ -21,7 +21,7 @@ func GenerateToken(email string, isAdmin bool, id int64) (string, error) {
 	jwtSecret := strings.TrimSpace(os.Getenv("SECRET_KEY"))
 
 	claims := jwt.MapClaims{
-		"id":       id,
+		"user_id":  id,
 		"email":    email,
 		"is_admin": isAdmin,
 		"exp":      time.Now().Add(time.Hour * 24 * 30).Unix(), // Token valid for 30 day
@@ -71,13 +71,13 @@ func Authentication(next http.Handler) http.Handler {
 		}
 
 		// Extract data from token
-		id, _ := claims["id"].(float64) // JWT stores numbers as float64
+		userId, _ := claims["user_id"].(float64) // JWT stores numbers as float64
 		email, _ := claims["email"].(string)
 		isAdmin, _ := claims["is_admin"].(bool)
 
 		// Store the user data in the request context
 		ctx := context.WithValue(r.Context(), UserContextKey, map[string]any{
-			"id":       int64(id),
+			"user_id":  int64(userId),
 			"email":    email,
 			"is_admin": isAdmin,
 		})

@@ -31,6 +31,8 @@ func (app *application) mount() *http.ServeMux {
 
 	mux.Handle("/v1/product/", middleware.Authentication(http.StripPrefix("/v1/product", app.ProductRouter())))
 
+	mux.Handle("/v1/cart/", middleware.Authentication(http.StripPrefix("/v1/cart", app.CartRouter())))
+
 	mux.Handle("/v1/auth/", http.StripPrefix("/v1/auth", app.AuthRouter()))
 
 	return mux

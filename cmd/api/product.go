@@ -227,7 +227,7 @@ func (app *application) ProductRouter() *http.ServeMux {
 
 	blogRouter.HandleFunc("POST /add", middleware.AdminHandler(app.addProduct))
 	blogRouter.HandleFunc("GET /getall", app.getProduct)
-	blogRouter.HandleFunc("DELETE /{id}", middleware.AdminHandler(app.deleteProduct))
+	blogRouter.HandleFunc("DELETE /remove/{id}", middleware.AdminHandler(app.deleteProduct))
 	blogRouter.HandleFunc("PATCH /update/{id}", middleware.AdminHandler(app.patchProduct))
 
 	// Catch-all route for undefined paths
