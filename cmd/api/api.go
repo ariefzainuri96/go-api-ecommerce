@@ -35,6 +35,8 @@ func (app *application) mount() *http.ServeMux {
 
 	mux.Handle("/v1/auth/", http.StripPrefix("/v1/auth", app.AuthRouter()))
 
+	mux.Handle("/v1/xendit-callback/", http.StripPrefix("/v1/xendit-callback", app.XenditCallbackRouter()))
+
 	return mux
 }
 
