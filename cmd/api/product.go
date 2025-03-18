@@ -25,6 +25,16 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	err = app.validator.Struct(data)
+
+	if err != nil {
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = err.Error()
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
+
 	err = app.store.Product.AddProduct(r.Context(), &data)
 
 	if err != nil {
@@ -77,68 +87,6 @@ func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(productResp)
 }
-
-func (app *application) searchProduct(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("query")
-
-	products, err := app.store.Product.SearchProduct(r.Context(), query)
-
-	baseResp := response.BaseResponse{}
-
-	if err != nil {
-		log.Println(err.Error())
-		baseResp.Status = http.StatusInternalServerError
-		baseResp.Message = "internal server error"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
-		return
-	}
-
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success"
-	productResp, _ := response.ProductsResponse{
-		BaseResponse: baseResp,
-		Products:     products,
-	}.MarshalProductsResponse()
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(productResp)
-}
-
-// func (app *application) getBlogById(w http.ResponseWriter, r *http.Request) {
-// 	id, err := strconv.Atoi(r.PathValue("id"))
-
-// 	baseResp := response.BaseResponse{}
-
-// 	if err != nil {
-// 		baseResp.Status = http.StatusBadRequest
-// 		baseResp.Message = "invalid id"
-// 		resp, _ := baseResp.MarshalBaseResponse()
-// 		http.Error(w, string(resp), http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	blog, err := app.store.Blogs.GetById(r.Context(), int64(id))
-
-// 	if err != nil {
-// 		log.Println(err.Error())
-// 		baseResp.Status = http.StatusInternalServerError
-// 		baseResp.Message = "internal server error"
-// 		resp, _ := baseResp.MarshalBaseResponse()
-// 		http.Error(w, string(resp), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	baseResp.Status = http.StatusOK
-// 	baseResp.Message = "Success"
-
-// 	blogResp, _ := response.BlogResponse{
-// 		BaseResponse: baseResp,
-// 		Blog:         blog,
-// 	}.MarshalBlogResponse()
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write(blogResp)
-// }
 
 func (app *application) deleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))

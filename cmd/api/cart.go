@@ -25,6 +25,16 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	err = app.validator.Struct(data)
+
+	if err != nil {
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = err.Error()
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
+
 	err = app.store.Cart.AddToCart(r.Context(), data)
 
 	if err != nil {
@@ -133,6 +143,16 @@ func (app *application) updateCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+
+	err = app.validator.Struct(updateData)
+
+	if err != nil {
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = err.Error()
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
 
 	err = app.store.Cart.UpdateQuantityCart(r.Context(), int64(id), updateData.Quantity)
 

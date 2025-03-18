@@ -7,6 +7,7 @@ import (
 
 	"github.com/ariefzainuri96/go-api-blogging/internal/db"
 	"github.com/ariefzainuri96/go-api-blogging/internal/store"
+	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 )
 
@@ -38,9 +39,12 @@ func main() {
 
 	store := store.NewStorage(db)
 
+	validate := validator.New()
+
 	app := &application{
-		config: cfg,
-		store:  store,
+		config:    cfg,
+		store:     store,
+		validator: validate,
 	}
 
 	mux := app.mount()

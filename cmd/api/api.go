@@ -7,11 +7,13 @@ import (
 
 	middleware "github.com/ariefzainuri96/go-api-blogging/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-blogging/internal/store"
+	"github.com/go-playground/validator/v10"
 )
 
 type application struct {
-	config config
-	store  store.Storage
+	config    config
+	store     store.Storage
+	validator *validator.Validate
 }
 
 type config struct {
@@ -32,6 +34,8 @@ func (app *application) mount() *http.ServeMux {
 	mux.Handle("/v1/product/", middleware.Authentication(http.StripPrefix("/v1/product", app.ProductRouter())))
 
 	mux.Handle("/v1/cart/", middleware.Authentication(http.StripPrefix("/v1/cart", app.CartRouter())))
+
+	mux.Handle("/v1/order/", middleware.Authentication(http.StripPrefix("/v1/order", app.OrderRouter())))
 
 	mux.Handle("/v1/auth/", http.StripPrefix("/v1/auth", app.AuthRouter()))
 

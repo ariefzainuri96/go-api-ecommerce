@@ -51,9 +51,12 @@ func (app *application) invoice(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	jsonData, _ := data.Marshal()
+	err = app.store.Order.UpdateStatusOrder(r.Context(), data.ID, data.Status)
 
-	log.Println(string(jsonData))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("invoice"))

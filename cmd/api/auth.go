@@ -23,6 +23,16 @@ func (app *application) login(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	err = app.validator.Struct(data)
+
+	if err != nil {
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = err.Error()
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
+
 	loginData, err := app.store.Auth.Login(r.Context(), data)
 
 	if err != nil {
@@ -54,7 +64,7 @@ func (app *application) login(w http.ResponseWriter, r *http.Request) {
 func (app *application) register(w http.ResponseWriter, r *http.Request) {
 	var baseResp response.BaseResponse
 
-	var data request.LoginRequest
+	var data request.RegisterReq
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest
@@ -64,6 +74,16 @@ func (app *application) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+
+	err = app.validator.Struct(data)
+
+	if err != nil {
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = err.Error()
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
 
 	err = app.store.Auth.Register(r.Context(), data)
 

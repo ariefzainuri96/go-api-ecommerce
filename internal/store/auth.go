@@ -51,7 +51,7 @@ func (store *AuthStore) Login(ctx context.Context, body request.LoginRequest) (r
 	return login, nil
 }
 
-func (store *AuthStore) Register(ctx context.Context, body request.LoginRequest) error {
+func (store *AuthStore) Register(ctx context.Context, body request.RegisterReq) error {
 	query := `INSERT INTO users (name, email, password) VALUES ($1, $2, $3)`
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
