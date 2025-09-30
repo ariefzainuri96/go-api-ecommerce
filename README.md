@@ -8,7 +8,7 @@
    migrate create -seq -ext sql -dir ././cmd/migrate/migrations create_users
 
 2. Perform migration:
-   migrate -path ./cmd/migrate/migrations -database="postgres://postgres:Rohanwebid96dong@localhost:5433/ecommerce-db?sslmode=disable" up
+   migrate -path ./cmd/migrate/migrations -database="postgres://postgres:postgres@localhost:5432/go-ecommerce-db?sslmode=disable" up
 
 ## Docker
 

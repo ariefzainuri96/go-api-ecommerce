@@ -171,17 +171,17 @@ func (app *application) patchProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) ProductRouter() *http.ServeMux {
-	blogRouter := http.NewServeMux()
+	productRouter := http.NewServeMux()
 
-	blogRouter.HandleFunc("POST /add", middleware.AdminHandler(app.addProduct))
-	blogRouter.HandleFunc("GET /getall", app.getProduct)
-	blogRouter.HandleFunc("DELETE /remove/{id}", middleware.AdminHandler(app.deleteProduct))
-	blogRouter.HandleFunc("PATCH /update/{id}", middleware.AdminHandler(app.patchProduct))
+	productRouter.HandleFunc("POST /add", middleware.AdminHandler(app.addProduct))
+	productRouter.HandleFunc("GET /getall", app.getProduct)
+	productRouter.HandleFunc("DELETE /remove/{id}", middleware.AdminHandler(app.deleteProduct))
+	productRouter.HandleFunc("PATCH /update/{id}", middleware.AdminHandler(app.patchProduct))
 
 	// Catch-all route for undefined paths
-	blogRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	productRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "404 page not found", http.StatusNotFound)
 	})
 
-	return blogRouter
+	return productRouter
 }
