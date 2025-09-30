@@ -9,6 +9,16 @@ import (
 	"github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
 )
 
+// @Summary      Login
+// @Description  Perform login
+// @Tags         login
+// @Accept       json
+// @Produce      json
+// @Param        request	body	  request.LoginRequest	true "Login request"
+// @Success      200  		{object}  response.LoginResponse
+// @Failure      400  		{object}  response.BaseResponse
+// @Failure      404  		{object}  response.BaseResponse
+// @Router       /auth/login	[post]
 func (app *application) login(w http.ResponseWriter, r *http.Request) {
 	var baseResp response.BaseResponse
 

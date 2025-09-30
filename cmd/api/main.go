@@ -1,10 +1,24 @@
+// @title           Your Ecommerce API
+// @version         1.0
+// @description     This is the documentation for the main e-commerce service.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@example.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @BasePath  /v1
+
 package main
 
 import (
 	"log"
-
 	"os"
 
+	"github.com/ariefzainuri96/go-api-blogging/cmd/api/docs"
 	"github.com/ariefzainuri96/go-api-blogging/internal/db"
 	"github.com/ariefzainuri96/go-api-blogging/internal/store"
 	"github.com/go-playground/validator/v10"
@@ -26,6 +40,14 @@ func main() {
 	}
 
 	defer db.Close()
+
+	envHost := os.Getenv("SWAGGER_HOST")
+
+	if envHost == "" {
+		envHost = "localhost:8080"
+	}
+
+	docs.SwaggerInfo.Host = envHost
 
 	cfg := config{
 		addr: ":8080",

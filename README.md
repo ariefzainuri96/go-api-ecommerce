@@ -1,6 +1,7 @@
 ## air-verse for hot reload
 
 1. <https://github.com/air-verse/air>
+2. run air with `air -c .air.toml`
 
 ## Migration
 

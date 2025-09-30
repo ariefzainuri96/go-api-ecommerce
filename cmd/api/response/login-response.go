@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 )
 
+// @Model
 type LoginResponse struct {
 	BaseResponse
 	Data LoginData `json:"data"`
@@ -23,6 +24,7 @@ func (r *LoginResponse) Unmarshal(data []byte) error {
 	return json.Unmarshal(data, &r)
 }
 
+// @Model
 type LoginData struct {
 	ID    int64  `json:"id"`
 	Token string `json:"token"`

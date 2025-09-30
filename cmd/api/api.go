@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	_ "github.com/ariefzainuri96/go-api-blogging/cmd/api/docs"
 	middleware "github.com/ariefzainuri96/go-api-blogging/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-blogging/internal/store"
 	"github.com/go-playground/validator/v10"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 type application struct {
@@ -40,6 +42,10 @@ func (app *application) mount() *http.ServeMux {
 	mux.Handle("/v1/auth/", http.StripPrefix("/v1/auth", app.AuthRouter()))
 
 	mux.Handle("/v1/xendit-callback/", http.StripPrefix("/v1/xendit-callback", app.XenditCallbackRouter()))
+
+	mux.Handle("/v1/swagger/", httpSwagger.Handler(
+		httpSwagger.URL("/v1/swagger/doc.json"),
+	))
 
 	return mux
 }
