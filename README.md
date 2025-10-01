@@ -47,3 +47,8 @@ Before disabling pg_trgm, remove any indexes using gin_trgm_ops:
 DROP INDEX IF EXISTS idx_products_name_trgm;
 
 DROP EXTENSION IF EXISTS pg_trgm CASCADE;
+
+## Open API
+
+1. to update the documentation, remove file `/cmd/api/docs/docs.go`
+2. move to folder `/cmd/api` then perform this command `swag init`
