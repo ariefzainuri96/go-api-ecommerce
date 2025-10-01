@@ -4,18 +4,19 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/request"
-	response "github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
-	"github.com/ariefzainuri96/go-api-blogging/internal/data"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
+	response "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
+	"gorm.io/gorm"
 )
 
 type Storage struct {
 	Product interface {
-		GetAllProduct(context.Context) ([]response.Product, error)
+		GetAllProduct(context.Context) ([]data.Product, error)
 		AddProduct(context.Context, *request.AddProductRequest) error
 		DeleteProduct(context.Context, int64) error
 		PatchProduct(context.Context, int64, map[string]any) error
-		SearchProduct(context.Context, string) ([]response.Product, error)
+		SearchProduct(context.Context, string) ([]data.Product, error)
 	}
 	Auth interface {
 		Login(context.Context, request.LoginRequest) (response.LoginData, error)
@@ -34,9 +35,9 @@ type Storage struct {
 	// create more interface here
 }
 
-func NewStorage(db *sql.DB) Storage {
+func NewStorage(db *sql.DB, gormDb *gorm.DB) Storage {
 	return Storage{
-		Product: &ProductStore{db},
+		Product: &ProductStore{db, gormDb},
 		Auth:    &AuthStore{db},
 		Cart:    &CartStore{db},
 		Order:   &OrderStore{db},

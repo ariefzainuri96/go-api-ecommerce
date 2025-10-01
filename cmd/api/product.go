@@ -6,11 +6,22 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/middleware"
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/request"
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
 )
 
+// @Summary      Add Product
+// @Description  Add new product
+// @Tags         product
+// @Accept       json
+// @Produce      json
+// @Param        request		body	  request.AddProductRequest	true "Add Product request"
+// @Success      200  			{object}  response.BaseResponse
+// @Failure      400  			{object}  response.BaseResponse
+// @Failure      404  			{object}  response.BaseResponse
+// @Router       /product/add	[post]
 func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 	baseResp := response.BaseResponse{}
 
@@ -57,7 +68,7 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("query")
 
-	var products []response.Product
+	var products []data.Product
 	var err error
 
 	if query == "" {

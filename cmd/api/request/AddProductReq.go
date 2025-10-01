@@ -7,6 +7,6 @@ import (
 type AddProductRequest struct {
 	Name        string `json:"name" validate:"required"`
 	Description string `json:"description" validate:"required"`
-	Price       int    `json:"price" validate:"required"`
+	Price       int64  `json:"price" validate:"required"`
 	Quantity    int    `json:"quantity" validate:"required"`
 }
