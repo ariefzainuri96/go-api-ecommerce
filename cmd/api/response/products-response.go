@@ -1,10 +1,14 @@
 package response
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
+)
 
 type ProductsResponse struct {
 	BaseResponse
-	Products []Product `json:"products"`
+	Products []data.Product `json:"products"`
 }
 
 func (r ProductsResponse) MarshalProductsResponse() ([]byte, error) {
@@ -19,13 +23,4 @@ func (r ProductsResponse) MarshalProductsResponse() ([]byte, error) {
 
 func (r *ProductsResponse) UnmarshalProductsResponse(data []byte) error {
 	return json.Unmarshal(data, &r)
-}
-
-type Product struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Price       int64  `json:"price"`
-	Quantity    int64  `json:"quantity"`
-	CreatedAt   string `json:"created_at"`
 }

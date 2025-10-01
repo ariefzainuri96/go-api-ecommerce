@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/request"
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 )
 
 type CartStore struct {

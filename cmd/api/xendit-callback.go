@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/request/xendit"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request/xendit"
 )
 
 func (app *application) fvaCreatedUpdated(w http.ResponseWriter, r *http.Request) {

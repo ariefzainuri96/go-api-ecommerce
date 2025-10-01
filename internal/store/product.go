@@ -7,24 +7,35 @@ import (
 	"log"
 	"strings"
 
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/request"
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
+	"gorm.io/gorm"
 )
 
 type ProductStore struct {
-	db *sql.DB
+	db     *sql.DB
+	gormDb *gorm.DB
 }
 
 func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductRequest) error {
-	query := `
-		INSERT INTO products (name, description, price, quantity)
-		VALUES ($1, $2, $3, $4);
-	`
+	// query := `
+	// 	INSERT INTO products (name, description, price, quantity)
+	// 	VALUES ($1, $2, $3, $4);
+	// `
 
-	_, err := s.db.ExecContext(ctx, query, body.Name, body.Description, body.Price, body.Quantity)
+	// _, err := s.db.ExecContext(ctx, query, body.Name, body.Description, body.Price, body.Quantity)
 
-	if err != nil {
-		return err
+	product := data.Product{
+		Name:        body.Name,
+		Description: body.Description,
+		Price:       int64(body.Price),
+		Quantity:    body.Quantity,
+	}
+
+	result := s.gormDb.WithContext(ctx).Create(&product)
+
+	if result.Error != nil {
+		return result.Error
 	}
 
 	return nil
@@ -50,8 +61,8 @@ func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductR
 // 	return blog, nil
 // }
 
-func (s *ProductStore) GetAllProduct(ctx context.Context) ([]response.Product, error) {
-	var products []response.Product
+func (s *ProductStore) GetAllProduct(ctx context.Context) ([]data.Product, error) {
+	var products []data.Product
 
 	query := `
 		SELECT id, name, description, price, quantity, created_at
@@ -67,7 +78,7 @@ func (s *ProductStore) GetAllProduct(ctx context.Context) ([]response.Product, e
 	defer rows.Close()
 
 	for rows.Next() {
-		var product response.Product
+		var product data.Product
 		err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Quantity, &product.CreatedAt)
 
 		if err != nil {
@@ -131,8 +142,8 @@ func (s *ProductStore) PatchProduct(ctx context.Context, id int64, patch map[str
 	return nil
 }
 
-func (s *ProductStore) SearchProduct(ctx context.Context, search string) ([]response.Product, error) {
-	var products []response.Product
+func (s *ProductStore) SearchProduct(ctx context.Context, search string) ([]data.Product, error) {
+	var products []data.Product
 
 	query := `
 		SELECT * FROM products
@@ -152,7 +163,7 @@ func (s *ProductStore) SearchProduct(ctx context.Context, search string) ([]resp
 	defer rows.Close()
 
 	for rows.Next() {
-		var product response.Product
+		var product data.Product
 		err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Quantity, &product.CreatedAt)
 
 		if err != nil {

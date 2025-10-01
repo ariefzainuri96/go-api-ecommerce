@@ -9,11 +9,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/middleware"
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/request"
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 
-	dbData "github.com/ariefzainuri96/go-api-blogging/internal/data"
+	dbData "github.com/ariefzainuri96/go-api-ecommerce/internal/data"
 )
 
 func createInvoice(data request.CreateInvoiceRequest, createdInvoiceResp *response.CreatedInvoiceResp) error {

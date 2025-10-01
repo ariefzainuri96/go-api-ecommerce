@@ -18,9 +18,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/docs"
-	"github.com/ariefzainuri96/go-api-blogging/internal/db"
-	"github.com/ariefzainuri96/go-api-blogging/internal/store"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/docs"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/db"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/store"
 	"github.com/go-playground/validator/v10"
 	"github.com/joho/godotenv"
 )
@@ -33,6 +33,7 @@ func main() {
 		return
 	}
 
+	gormDb, err := db.NewGorm(os.Getenv("DB_ADDR"))
 	db, err := db.New(os.Getenv("DB_ADDR"), 30, 30, "10m")
 
 	if err != nil {
@@ -59,7 +60,7 @@ func main() {
 		},
 	}
 
-	store := store.NewStorage(db)
+	store := store.NewStorage(db, gormDb)
 
 	validate := validator.New()
 

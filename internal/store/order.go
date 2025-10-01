@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/ariefzainuri96/go-api-blogging/internal/data"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
 )
 
 type OrderStore struct {

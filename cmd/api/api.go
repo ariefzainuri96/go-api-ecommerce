@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	_ "github.com/ariefzainuri96/go-api-blogging/cmd/api/docs"
-	middleware "github.com/ariefzainuri96/go-api-blogging/cmd/api/middleware"
-	"github.com/ariefzainuri96/go-api-blogging/internal/store"
+	_ "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/docs"
+	middleware "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/store"
 	"github.com/go-playground/validator/v10"
 	httpSwagger "github.com/swaggo/http-swagger"
 )

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/middleware"
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/request"
-	"github.com/ariefzainuri96/go-api-blogging/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 )
 
 func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
