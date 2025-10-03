@@ -37,6 +37,26 @@ func FilterSlice[T any](items []T, filterFunc func(T) bool) []T {
 	return result
 }
 
+func MapSlice[T any, R any](source []T, transformer func(T) R) []R {
+	// 1. Fail Fast: Handle nil or empty input gracefully
+	if source == nil {
+		return nil
+	}
+	if len(source) == 0 {
+		return []R{}
+	}
+
+	// 2. Initialize the result slice with the correct capacity
+	result := make([]R, len(source))
+
+	// 3. Loop and transform
+	for i, item := range source {
+		result[i] = transformer(item)
+	}
+
+	return result
+}
+
 // LoadJsonData loads JSON data from a file into the provided destination.
 func LoadJsonData[T any](filePath string, data *T) error {
 	file, err := os.Open(filePath)

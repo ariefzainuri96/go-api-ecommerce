@@ -3,12 +3,13 @@ package response
 import (
 	"encoding/json"
 
-	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
+	en "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 )
 
+// @Model
 type ProductsResponse struct {
 	BaseResponse
-	Products []data.Product `json:"products"`
+	Products []en.Product `json:"products"`
 }
 
 func (r ProductsResponse) MarshalProductsResponse() ([]byte, error) {

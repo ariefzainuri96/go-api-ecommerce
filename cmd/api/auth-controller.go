@@ -43,7 +43,7 @@ func (app *application) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loginData, err := app.store.Auth.Login(r.Context(), data)
+	loginData, err := app.store.IAuth.Login(r.Context(), data)
 
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest
@@ -95,7 +95,7 @@ func (app *application) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.Auth.Register(r.Context(), data)
+	err = app.store.IAuth.Register(r.Context(), data)
 
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest

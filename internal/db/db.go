@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -27,7 +27,7 @@ func NewGorm(addr string) (*gorm.DB, error) {
 	// Optional: AutoMigrate creates/updates table based on the struct definition
 	// This is a powerful feature but use with caution in production.
 	// It's very useful for development.
-	err = db.AutoMigrate(&data.Product{})
+	err = db.AutoMigrate(&entity.Product{}, &entity.Cart{})
 
 	if err != nil {
 		log.Fatalf("Failed to perform auto migration: %v", err)

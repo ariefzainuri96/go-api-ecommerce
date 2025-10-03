@@ -2,11 +2,13 @@ package response
 
 import (
 	"encoding/json"
+
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 )
 
 type CartsResponse struct {
 	BaseResponse
-	Carts []Cart `json:"carts"`
+	Carts []entity.Cart `json:"carts"`
 }
 
 func (r CartsResponse) MarshalResponse() ([]byte, error) {
@@ -23,11 +25,8 @@ func (r *CartsResponse) UnmarshalResponse(data []byte) error {
 	return json.Unmarshal(data, &r)
 }
 
-type Cart struct {
-	ID           int64  `json:"id"`
-	ProductName  string `json:"product_name"`
-	ProductPrice int64  `json:"product_price"`
-	FullName     string `json:"full_name"`
-	Quantity     int    `json:"quantity"`
-	TotalAmount  int64  `json:"total_amount"`
+type CartResponse struct {
+	entity.BaseEntity
+	Product  entity.Product `json:"product"`
+	Quantity int            `json:"quantity"`
 }

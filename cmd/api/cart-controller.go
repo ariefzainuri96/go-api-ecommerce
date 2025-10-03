@@ -11,6 +11,17 @@ import (
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 )
 
+// @Summary      Add Cart
+// @Description  Add cart data
+// @Tags         cart
+// @Accept       json
+// @Produce      json
+// @Param        request		body	  request.AddToCartRequest	true "Add cart request"
+// @security 	 ApiKeyAuth
+// @Success      200  			{object}  response.BaseResponse
+// @Failure      400  			{object}  response.BaseResponse
+// @Failure      404  			{object}  response.BaseResponse
+// @Router       /cart/add		[post]
 func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 	var baseResp response.BaseResponse
 
@@ -35,7 +46,7 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.Cart.AddToCart(r.Context(), data)
+	err = app.store.ICart.AddToCart(r.Context(), data)
 
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest
@@ -53,6 +64,17 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// @Summary      Get Cart
+// @Description  Get cart data
+// @Tags         cart
+// @Accept       json
+// @Produce      json
+// @Param        request		query	  request.PaginationRequest	true "Pagination request"
+// @security 	 ApiKeyAuth
+// @Success      200  			{object}  response.CartsResponse
+// @Failure      400  			{object}  response.BaseResponse
+// @Failure      404  			{object}  response.BaseResponse
+// @Router       /cart/getall	[get]
 func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 	var baseResp response.BaseResponse
 
@@ -67,7 +89,7 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 
 	log.Println(user)
 
-	carts, err := app.store.Cart.GetCart(r.Context(), userId)
+	carts, err := app.store.ICart.GetCart(r.Context(), userId)
 
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest
@@ -102,7 +124,7 @@ func (app *application) deleteCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.Cart.DeleteFromCart(r.Context(), int64(id))
+	err = app.store.ICart.DeleteFromCart(r.Context(), int64(id))
 
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest
@@ -154,7 +176,7 @@ func (app *application) updateCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.Cart.UpdateQuantityCart(r.Context(), int64(id), updateData.Quantity)
+	err = app.store.ICart.UpdateQuantityCart(r.Context(), int64(id), updateData.Quantity)
 
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest

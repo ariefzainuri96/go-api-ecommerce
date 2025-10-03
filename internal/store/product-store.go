@@ -7,8 +7,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
-	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
 	"gorm.io/gorm"
 )
 
@@ -25,7 +25,7 @@ func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductR
 
 	// _, err := s.db.ExecContext(ctx, query, body.Name, body.Description, body.Price, body.Quantity)
 
-	product := data.Product{
+	product := entity.Product{
 		Name:        body.Name,
 		Description: body.Description,
 		Price:       int64(body.Price),
@@ -61,8 +61,8 @@ func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductR
 // 	return blog, nil
 // }
 
-func (s *ProductStore) GetAllProduct(ctx context.Context) ([]data.Product, error) {
-	var products []data.Product
+func (s *ProductStore) GetAllProduct(ctx context.Context) ([]entity.Product, error) {
+	var products []entity.Product
 
 	query := `
 		SELECT id, name, description, price, quantity, created_at
@@ -78,7 +78,7 @@ func (s *ProductStore) GetAllProduct(ctx context.Context) ([]data.Product, error
 	defer rows.Close()
 
 	for rows.Next() {
-		var product data.Product
+		var product entity.Product
 		err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Quantity, &product.CreatedAt)
 
 		if err != nil {
@@ -142,8 +142,8 @@ func (s *ProductStore) PatchProduct(ctx context.Context, id int64, patch map[str
 	return nil
 }
 
-func (s *ProductStore) SearchProduct(ctx context.Context, search string) ([]data.Product, error) {
-	var products []data.Product
+func (s *ProductStore) SearchProduct(ctx context.Context, search string) ([]entity.Product, error) {
+	var products []entity.Product
 
 	query := `
 		SELECT * FROM products
@@ -163,7 +163,7 @@ func (s *ProductStore) SearchProduct(ctx context.Context, search string) ([]data
 	defer rows.Close()
 
 	for rows.Next() {
-		var product data.Product
+		var product entity.Product
 		err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Quantity, &product.CreatedAt)
 
 		if err != nil {

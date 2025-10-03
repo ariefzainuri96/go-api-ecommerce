@@ -122,7 +122,7 @@ func (app *application) createOrder(w http.ResponseWriter, r *http.Request) {
 		InvoiceExpDate: createdInvoice.ExpiryDate,
 	}
 
-	err = app.store.Order.CreateOrder(r.Context(), createOrderData)
+	err = app.store.IOrder.CreateOrder(r.Context(), createOrderData)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

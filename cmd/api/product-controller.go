@@ -6,11 +6,14 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
-	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
+	"github.com/gorilla/schema"
 )
+
+var decoder = schema.NewDecoder()
 
 // @Summary      Add Product
 // @Description  Add new product
@@ -18,6 +21,7 @@ import (
 // @Accept       json
 // @Produce      json
 // @Param        request		body	  request.AddProductRequest	true "Add Product request"
+// @security 	 ApiKeyAuth
 // @Success      200  			{object}  response.BaseResponse
 // @Failure      400  			{object}  response.BaseResponse
 // @Failure      404  			{object}  response.BaseResponse
@@ -46,7 +50,7 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.Product.AddProduct(r.Context(), &data)
+	err = app.store.IProduct.AddProduct(r.Context(), &data)
 
 	if err != nil {
 		log.Println(err.Error())
@@ -65,16 +69,37 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+// @Summary      Get Product
+// @Description  Get All product
+// @Tags         product
+// @Accept       json
+// @Produce      json
+// @Param        request			query	  request.PaginationRequest	true "Get Product request"
+// @security 	 ApiKeyAuth
+// @Success      200  				{object}  response.ProductsResponse
+// @Failure      400  				{object}  response.BaseResponse
+// @Failure      404  				{object}  response.BaseResponse
+// @Router       /product/getall	[get]
 func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("query")
+	var data request.PaginationRequest
+	var products []entity.Product
 
-	var products []data.Product
-	var err error
+	err := decoder.Decode(&data, r.URL.Query())
 
-	if query == "" {
-		products, err = app.store.Product.GetAllProduct(r.Context())
+	if err != nil {
+		log.Printf("Error getProduct: %v", err.Error())
+		baseResp := response.BaseResponse{}
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = "invalid request"
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
+
+	if data.SearchAll == "" {
+		products, err = app.store.IProduct.GetAllProduct(r.Context())
 	} else {
-		products, err = app.store.Product.SearchProduct(r.Context(), query)
+		products, err = app.store.IProduct.SearchProduct(r.Context(), data.SearchAll)
 	}
 
 	baseResp := response.BaseResponse{}
@@ -112,7 +137,7 @@ func (app *application) deleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.Product.DeleteProduct(r.Context(), int64(id))
+	err = app.store.IProduct.DeleteProduct(r.Context(), int64(id))
 
 	if err != nil {
 		log.Println(err.Error())
@@ -162,7 +187,7 @@ func (app *application) patchProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.Product.PatchProduct(r.Context(), int64(productID), updateData)
+	err = app.store.IProduct.PatchProduct(r.Context(), int64(productID), updateData)
 
 	if err != nil {
 		log.Println(err.Error())

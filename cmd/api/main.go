@@ -12,6 +12,11 @@
 
 // @BasePath  /v1
 
+// @securitydefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 package main
 
 import (

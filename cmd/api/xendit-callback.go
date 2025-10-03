@@ -51,7 +51,7 @@ func (app *application) invoice(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	err = app.store.Order.UpdateStatusOrder(r.Context(), data.ID, data.Status)
+	err = app.store.IOrder.UpdateStatusOrder(r.Context(), data.ID, data.Status)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
