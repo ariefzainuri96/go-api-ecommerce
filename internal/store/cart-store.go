@@ -58,15 +58,21 @@ func (s *CartStore) GetCart(ctx context.Context, userID int64, req request.Pagin
 		Model(&entity.Cart{}).
 		Where(entity.Cart{UserId: userID}).
 		Preload("Product", nil).
+		// if you want to perform, like search or filtering using field from the related table,
+		// you should make Joins first
 		Joins("INNER JOIN products ON carts.product_id = products.id")
 
 	var searchAllQuery string
 
 	if req.SearchAll != "" {
-		searchAllQuery = "products.name ILIKE ? OR carts.quantity ILIKE ?"
+		searchAllQuery = "products.name ILIKE ? OR CAST(carts.quantity as TEXT) ILIKE ?"
 	}
 
 	result := utils.ApplyPagination[entity.Cart](query, req, searchAllQuery)
+
+	if result.Error != nil {
+		return response.CartsResponse{}, result.Error
+	}
 
 	return response.CartsResponse{
 		BaseResponse: response.BaseResponse{

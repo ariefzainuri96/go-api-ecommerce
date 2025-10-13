@@ -38,7 +38,7 @@ func ApplyPagination[T any](db *gorm.DB, req request.PaginationRequest, searchAl
 		// 1. Specific Field Search (No change needed here, as it uses req.SearchField)
 		if req.SearchField != "" && req.SearchValue != "" {
 			// ... (existing SearchField logic remains) ...
-			return q.Where(fmt.Sprintf("%s ILIKE ?", req.SearchField), "%"+req.SearchValue+"%")
+			return q.Where(fmt.Sprintf("CAST(%s AS TEXT) ILIKE ?", req.SearchField), "%"+req.SearchValue+"%")
 		}
 
 		// 2. Generic SearchAll Logic (Uses the provided map)
@@ -81,14 +81,17 @@ func ApplyPagination[T any](db *gorm.DB, req request.PaginationRequest, searchAl
 	// --- 4. Apply Pagination and Ordering ---
 
 	// Apply Ordering
+	orderBy := "id"
 	if req.OrderBy != "" {
-		sortDirection := "ASC"
-		if strings.ToUpper(req.Sort) == "DESC" {
-			sortDirection = "DESC"
-		}
-		// FAIL FAST: Use safe formatting with placeholders
-		paginatedQuery = paginatedQuery.Order(fmt.Sprintf("%s %s", req.OrderBy, sortDirection))
+		orderBy = req.OrderBy
 	}
+	
+	sortDirection := "ASC"
+	if strings.ToUpper(req.Sort) == "DESC" {
+		sortDirection = "DESC"
+	}
+	// FAIL FAST: Use safe formatting with placeholders
+	paginatedQuery = paginatedQuery.Order(fmt.Sprintf("%s %s", orderBy, sortDirection))
 
 	// Apply Limit and Offset
 	paginatedQuery = paginatedQuery.Offset(offset).Limit(req.PageSize)
