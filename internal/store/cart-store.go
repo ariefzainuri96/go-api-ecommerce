@@ -3,14 +3,12 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"math"
 	"net/http"
-	"strings"
 
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/utils"
 	"gorm.io/gorm"
 )
 
@@ -56,71 +54,28 @@ func (s *CartStore) DeleteFromCart(ctx context.Context, productID int64) error {
 }
 
 func (s *CartStore) GetCart(ctx context.Context, userID int64, req request.PaginationRequest) (response.CartsResponse, error) {
-	var resp response.CartsResponse
-
-	offset := (req.Page - 1) * req.PageSize
-
-	query := gorm.G[entity.Cart](s.gormDb).
+	query := s.gormDb.WithContext(ctx).
+		Model(&entity.Cart{}).
 		Where(entity.Cart{UserId: userID}).
 		Preload("Product", nil).
-		Offset(offset).
-		Limit(req.PageSize)
+		Joins("INNER JOIN products ON carts.product_id = products.id")
 
-	// Optional ordering
-	if req.OrderBy != "" {
-		sortDirection := "ASC"
-		if strings.ToUpper(req.Sort) == "DESC" {
-			sortDirection = "DESC"
-		}
-		query = query.Order(fmt.Sprintf("%s %s", req.OrderBy, sortDirection))
+	var searchAllQuery string
+
+	if req.SearchAll != "" {
+		searchAllQuery = "products.name ILIKE ? OR carts.quantity ILIKE ?"
 	}
 
-	// Optional search filtering
-	if req.SearchField != "" && req.SearchValue != "" {
-		query = query.Where(fmt.Sprintf("%s ILIKE ?", req.SearchField), "%"+req.SearchValue+"%")
-	} else if req.SearchAll != "" {
-		search := "%" + req.SearchAll + "%"
-		query = query.Where("product_name ILIKE ? OR description ILIKE ?", search, search)
-	}
+	result := utils.ApplyPagination[entity.Cart](query, req, searchAllQuery)
 
-	// Fetch paginated data
-	carts, err := query.Find(ctx)
-	if err != nil {
-		return resp, fmt.Errorf("failed to fetch carts: %w", err)
-	}
-
-	// Count total rows (without offset/limit)
-	var total int64
-	countQuery := s.gormDb.Model(&entity.Cart{}).Where("user_id = ?", userID)
-	if req.SearchField != "" && req.SearchValue != "" {
-		countQuery = countQuery.Where(fmt.Sprintf("%s ILIKE ?", req.SearchField), "%"+req.SearchValue+"%")
-	} else if req.SearchAll != "" {
-		search := "%" + req.SearchAll + "%"
-		countQuery = countQuery.Where("product_name ILIKE ? OR description ILIKE ?", search, search)
-	}
-
-	if err := countQuery.Count(&total).Error; err != nil {
-		return resp, fmt.Errorf("failed to count carts: %w", err)
-	}
-
-	totalPages := int(math.Ceil(float64(total) / float64(req.PageSize)))
-
-	// Build response
-	resp = response.CartsResponse{
+	return response.CartsResponse{
 		BaseResponse: response.BaseResponse{
 			Message: "success",
 			Status:  http.StatusOK,
 		},
-		Carts: carts,
-		Pagination: response.PaginationMetadata{
-			Page:      req.Page,
-			PageSize:  req.PageSize,
-			TotalData: total,
-			TotalPage: totalPages,
-		},
-	}
-
-	return resp, nil
+		Carts:      result.Data,
+		Pagination: result.Pagination,
+	}, nil
 }
 
 func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int64, quantity int64) error {
