@@ -3,6 +3,13 @@
 1. <https://github.com/air-verse/air>
 2. run air with `air -c .air.toml`
 
+## swagger openapi
+
+1. to update the documentation, head to cmd/api
+2. move to `base-entity.go` comment `DeletedAt` and uncomment the below implementation
+3. run this command `swag init`
+4. after success, revert back the change of commenting `DeletedAt`
+
 ## Migration
 
 1. Create migration file:

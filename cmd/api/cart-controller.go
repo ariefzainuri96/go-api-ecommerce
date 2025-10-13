@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -36,6 +35,13 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
+	user, ok := middleware.GetUserFromContext(r)
+
+	if !ok {
+		http.Error(w, "Unauthorized, please re login!", http.StatusUnauthorized)
+		return
+	}
+
 	err = app.validator.Struct(data)
 
 	if err != nil {
@@ -46,7 +52,7 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.ICart.AddToCart(r.Context(), data)
+	err = app.store.ICart.AddToCart(r.Context(), data, user["user_id"].(int64))
 
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest
@@ -77,6 +83,7 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 // @Router       /cart/getall	[get]
 func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 	var baseResp response.BaseResponse
+	var data request.PaginationRequest
 
 	user, ok := middleware.GetUserFromContext(r)
 
@@ -85,11 +92,19 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err := decoder.Decode(&data, r.URL.Query())
+
+	if err != nil {
+		baseResp.Status = http.StatusBadRequest
+		baseResp.Message = "invalid request"
+		resp, _ := baseResp.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
+
 	userId := user["user_id"].(int64)
 
-	log.Println(user)
-
-	carts, err := app.store.ICart.GetCart(r.Context(), userId)
+	resp, err := app.store.ICart.GetCart(r.Context(), userId, data)
 
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest
@@ -99,13 +114,7 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success"
-
-	cartResp, _ := response.CartsResponse{
-		BaseResponse: baseResp,
-		Carts:        carts,
-	}.MarshalResponse()
+	cartResp, _ := resp.MarshalResponse()
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(cartResp)

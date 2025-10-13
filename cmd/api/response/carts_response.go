@@ -8,7 +8,8 @@ import (
 
 type CartsResponse struct {
 	BaseResponse
-	Carts []entity.Cart `json:"carts"`
+	Carts      []entity.Cart      `json:"carts"`
+	Pagination PaginationMetadata `json:"pagination"`
 }
 
 func (r CartsResponse) MarshalResponse() ([]byte, error) {
@@ -23,10 +24,4 @@ func (r CartsResponse) MarshalResponse() ([]byte, error) {
 
 func (r *CartsResponse) UnmarshalResponse(data []byte) error {
 	return json.Unmarshal(data, &r)
-}
-
-type CartResponse struct {
-	entity.BaseEntity
-	Product  entity.Product `json:"product"`
-	Quantity int            `json:"quantity"`
 }

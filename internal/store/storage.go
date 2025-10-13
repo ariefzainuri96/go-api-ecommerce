@@ -24,8 +24,8 @@ type Storage struct {
 		Register(context.Context, request.RegisterReq) error
 	}
 	ICart interface {
-		AddToCart(context.Context, request.AddToCartRequest) error
-		GetCart(context.Context, int64) ([]entity.Cart, error)
+		AddToCart(context.Context, request.AddToCartRequest, int64) error
+		GetCart(context.Context, int64, request.PaginationRequest) (response.CartsResponse, error)
 		DeleteFromCart(context.Context, int64) error
 		UpdateQuantityCart(context.Context, int64, int64) error
 	}

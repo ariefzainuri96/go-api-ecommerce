@@ -3,9 +3,14 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"math"
+	"net/http"
+	"strings"
 
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"gorm.io/gorm"
 )
 
@@ -14,7 +19,7 @@ type CartStore struct {
 	gormDb *gorm.DB
 }
 
-func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest) error {
+func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest, userId int64) error {
 	// query := `
 	// 	INSERT INTO carts (product_id, quantity, user_id)
 	// 	VALUES ($1, $2, $3);
@@ -22,7 +27,7 @@ func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest
 
 	result := s.gormDb.WithContext(ctx).Create(&entity.Cart{
 		ProductId: body.ProductID,
-		UserId:    body.UserID,
+		UserId:    userId,
 		Quantity:  body.Quantity,
 	})
 
@@ -50,45 +55,72 @@ func (s *CartStore) DeleteFromCart(ctx context.Context, productID int64) error {
 	return nil
 }
 
-func (s *CartStore) GetCart(ctx context.Context, userID int64) ([]entity.Cart, error) {
-	// rows, err := s.gormDb.Table("users").Select("users.name, emails.email").Joins("left join emails on emails.user_id = users.id").Rows()
-	carts, err := gorm.G[entity.Cart](s.gormDb).
+func (s *CartStore) GetCart(ctx context.Context, userID int64, req request.PaginationRequest) (response.CartsResponse, error) {
+	var resp response.CartsResponse
+
+	offset := (req.Page - 1) * req.PageSize
+
+	query := gorm.G[entity.Cart](s.gormDb).
 		Where(entity.Cart{UserId: userID}).
 		Preload("Product", nil).
-		Find(ctx)
+		Offset(offset).
+		Limit(req.PageSize)
 
-	if err != nil {
-		return nil, err
+	// Optional ordering
+	if req.OrderBy != "" {
+		sortDirection := "ASC"
+		if strings.ToUpper(req.Sort) == "DESC" {
+			sortDirection = "DESC"
+		}
+		query = query.Order(fmt.Sprintf("%s %s", req.OrderBy, sortDirection))
 	}
 
-	// query := `
-	// 	SELECT shopping_carts.id, products.name, products.price, users.name, shopping_carts.quantity, products.price * shopping_carts.quantity as total
-	// 	FROM shopping_carts
-	// 	INNER JOIN products ON shopping_carts.product_id = products.id
-	// 	INNER JOIN users ON shopping_carts.user_id = users.id
-	// 	WHERE shopping_carts.user_id = $1;
-	// `
+	// Optional search filtering
+	if req.SearchField != "" && req.SearchValue != "" {
+		query = query.Where(fmt.Sprintf("%s ILIKE ?", req.SearchField), "%"+req.SearchValue+"%")
+	} else if req.SearchAll != "" {
+		search := "%" + req.SearchAll + "%"
+		query = query.Where("product_name ILIKE ? OR description ILIKE ?", search, search)
+	}
 
-	// rows, err := s.db.QueryContext(ctx, query, userID)
+	// Fetch paginated data
+	carts, err := query.Find(ctx)
+	if err != nil {
+		return resp, fmt.Errorf("failed to fetch carts: %w", err)
+	}
 
-	// if err != nil {
-	// 	return nil, err
-	// }
+	// Count total rows (without offset/limit)
+	var total int64
+	countQuery := s.gormDb.Model(&entity.Cart{}).Where("user_id = ?", userID)
+	if req.SearchField != "" && req.SearchValue != "" {
+		countQuery = countQuery.Where(fmt.Sprintf("%s ILIKE ?", req.SearchField), "%"+req.SearchValue+"%")
+	} else if req.SearchAll != "" {
+		search := "%" + req.SearchAll + "%"
+		countQuery = countQuery.Where("product_name ILIKE ? OR description ILIKE ?", search, search)
+	}
 
-	// defer rows.Close()
+	if err := countQuery.Count(&total).Error; err != nil {
+		return resp, fmt.Errorf("failed to count carts: %w", err)
+	}
 
-	// var carts []entity.Cart
+	totalPages := int(math.Ceil(float64(total) / float64(req.PageSize)))
 
-	// for rows.Next() {
-	// 	var cart entity.Cart
-	// 	err := rows.Scan(&cart.ID, &cart.ProductName, &cart.ProductPrice, &cart.FullName, &cart.Quantity, &cart.TotalAmount)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	carts = append(carts, cart)
-	// }
+	// Build response
+	resp = response.CartsResponse{
+		BaseResponse: response.BaseResponse{
+			Message: "success",
+			Status:  http.StatusOK,
+		},
+		Carts: carts,
+		Pagination: response.PaginationMetadata{
+			Page:      req.Page,
+			PageSize:  req.PageSize,
+			TotalData: total,
+			TotalPage: totalPages,
+		},
+	}
 
-	return carts, nil
+	return resp, nil
 }
 
 func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int64, quantity int64) error {
