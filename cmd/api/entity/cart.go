@@ -12,3 +12,7 @@ type Cart struct {
 	Quantity  int     `gorm:"type:integer;not null;column:quantity" json:"quantity"`
 	Product   Product `json:"product"`
 }
+
+func (Cart) TableName() string {
+	return "carts"
+}
