@@ -27,11 +27,12 @@ type Storage struct {
 		AddToCart(context.Context, request.AddToCartRequest, int64) error
 		GetCart(context.Context, int64, request.PaginationRequest) (response.CartsResponse, error)
 		DeleteFromCart(context.Context, int64) error
-		UpdateQuantityCart(context.Context, int64, int64) error
+		UpdateQuantityCart(context.Context, int64, int64) error		
 	}
 	IOrder interface {
 		CreateOrder(context.Context, data.CreateOrderStruct) error
 		UpdateStatusOrder(context.Context, string, string) error
+		DeleteOrder(context.Context, int) error
 	}
 	// create more interface here
 }

@@ -12,6 +12,21 @@ type OrderStore struct {
 	db *sql.DB
 }
 
+func (s *OrderStore) DeleteOrder(ctx context.Context, invoiceID int) error {
+	query := `
+		DELETE FROM orders
+		WHERE invoice_id = $1;
+	`
+
+	_, err := s.db.ExecContext(ctx, query, invoiceID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *OrderStore) CreateOrder(ctx context.Context, body data.CreateOrderStruct) error {
 	query := `
 		INSERT INTO orders (user_id, total_price, status, product_id, quantity, invoice_id, invoice_url, invoice_exp_date)

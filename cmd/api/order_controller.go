@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
@@ -61,6 +62,36 @@ func createInvoice(data request.CreateInvoiceRequest, createdInvoiceResp *respon
 	}
 
 	return nil
+}
+
+func (app *application) deleteOrder(w http.ResponseWriter, r *http.Request) {
+	var baseResponse response.BaseResponse
+
+	id, err := strconv.Atoi(r.PathValue("id"))
+
+	if (err != nil) {
+		baseResponse.Status = http.StatusBadRequest
+		baseResponse.Message = "Invalid request"
+		resp, _ := baseResponse.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusBadRequest)
+		return
+	}
+
+	err = app.store.IOrder.DeleteOrder(r.Context(), id)
+
+	if err != nil {
+		baseResponse.Status = http.StatusInternalServerError
+		baseResponse.Message = "Failed to delete order!"
+		resp, _ := baseResponse.MarshalBaseResponse()
+		http.Error(w, string(resp), http.StatusInternalServerError)
+		return
+	}
+
+	baseResponse.Status = http.StatusOK
+	baseResponse.Message = "Success delete order!"
+	resp, _ := baseResponse.MarshalBaseResponse()
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
 }
 
 func (app *application) createOrder(w http.ResponseWriter, r *http.Request) {
@@ -157,6 +188,7 @@ func (app *application) OrderRouter() *http.ServeMux {
 	orderRouter := http.NewServeMux()
 
 	orderRouter.HandleFunc("POST /create-order", app.createOrder)
+	orderRouter.HandleFunc("DELETE /delete-order/{id}", app.deleteOrder)
 
 	// Catch-all route for undefined paths
 	orderRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
