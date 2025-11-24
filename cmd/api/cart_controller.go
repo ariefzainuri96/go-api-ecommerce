@@ -52,7 +52,7 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.ICart.AddToCart(r.Context(), data, user["user_id"].(int64))
+	err = app.store.ICart.AddToCart(r.Context(), data, user["user_id"].(int))
 
 	if err != nil {
 		baseResp.Status = http.StatusBadRequest
@@ -98,9 +98,7 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userId := user["user_id"].(int64)
-
-	resp, err := app.store.ICart.GetCart(r.Context(), userId, request)
+	resp, err := app.store.ICart.GetCart(r.Context(), user["user_id"].(int), request)
 
 	if err != nil {
 		app.respondError(w, http.StatusInternalServerError, err.Error())
@@ -111,56 +109,38 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) deleteCart(w http.ResponseWriter, r *http.Request) {
-	var baseResp response.BaseResponse
-
 	id, err := strconv.Atoi(r.PathValue("id"))
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "invalid id"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
-	err = app.store.ICart.DeleteFromCart(r.Context(), int64(id))
+	err = app.store.ICart.DeleteFromCart(r.Context(), id)
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = err.Error()
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
+		app.respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success delete cart"
-
-	resp, _ := baseResp.MarshalBaseResponse()
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	app.writeJSON(w, http.StatusOK, response.BaseResponse{
+		Status:  http.StatusOK,
+		Message: "Success delete cart!",
+	})
 }
 
 func (app *application) updateCart(w http.ResponseWriter, r *http.Request) {
-	var baseResp response.BaseResponse
-
 	id, err := strconv.Atoi(r.PathValue("id"))
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "invalid id"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
 	var updateData request.UpdateCartRequest
 	err = json.NewDecoder(r.Body).Decode(&updateData)
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "invalid request"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 	defer r.Body.Close()
@@ -168,29 +148,21 @@ func (app *application) updateCart(w http.ResponseWriter, r *http.Request) {
 	err = app.validator.Struct(updateData)
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = err.Error()
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err = app.store.ICart.UpdateQuantityCart(r.Context(), int64(id), updateData.Quantity)
+	err = app.store.ICart.UpdateQuantityCart(r.Context(), id, updateData.Quantity)
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = err.Error()
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
+		app.respondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success update cart"
-
-	resp, _ := baseResp.MarshalBaseResponse()
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	app.writeJSON(w, http.StatusOK, response.BaseResponse{
+		Status:  http.StatusOK,
+		Message: "Success updating cart!",
+	})
 }
 
 func (app *application) CartRouter() *http.ServeMux {

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
@@ -17,7 +18,7 @@ type CartStore struct {
 	gormDb *gorm.DB
 }
 
-func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest, userId int64) error {
+func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest, userId int) error {
 	// query := `
 	// 	INSERT INTO carts (product_id, quantity, user_id)
 	// 	VALUES ($1, $2, $3);
@@ -29,8 +30,6 @@ func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest
 		Quantity:  body.Quantity,
 	})
 
-	// _, err := s.db.ExecContext(ctx, query, body.ProductID, body.Quantity, body.UserID)
-
 	if result.Error != nil {
 		return result.Error
 	}
@@ -38,22 +37,23 @@ func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest
 	return nil
 }
 
-func (s *CartStore) DeleteFromCart(ctx context.Context, productID int64) error {
-	query := `
-		DELETE FROM shopping_carts
-		WHERE id = $1;
-	`
-
-	_, err := s.db.ExecContext(ctx, query, productID)
+func (s *CartStore) DeleteFromCart(ctx context.Context, productID int) error {
+	rows, err := gorm.G[entity.Cart](s.gormDb).
+		Where(&entity.Cart{ProductId: productID}).
+		Delete(ctx)
 
 	if err != nil {
 		return err
 	}
 
+	if rows == 0 {
+		return fmt.Errorf("no rows affected")
+	}
+
 	return nil
 }
 
-func (s *CartStore) GetCart(ctx context.Context, userID int64, req request.PaginationRequest) (response.CartsResponse, error) {
+func (s *CartStore) GetCart(ctx context.Context, userID int, req request.PaginationRequest) (response.CartsResponse, error) {
 	query := s.gormDb.WithContext(ctx).
 		Model(&entity.Cart{}).
 		Where(entity.Cart{UserId: userID}).
@@ -84,17 +84,21 @@ func (s *CartStore) GetCart(ctx context.Context, userID int64, req request.Pagin
 	}, nil
 }
 
-func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int64, quantity int64) error {
-	query := `
-		UPDATE shopping_carts
-		SET quantity = $1
-		WHERE id = $2;
-	`
+func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int, quantity int) error {
+	result := s.gormDb.WithContext(ctx).
+		Model(&entity.Cart{}).
+		UpdateColumn("Quantity", quantity)
 
-	_, err := s.db.ExecContext(ctx, query, quantity, id)
+	// query := `
+	// 	UPDATE shopping_carts
+	// 	SET quantity = $1
+	// 	WHERE id = $2;
+	// `
 
-	if err != nil {
-		return err
+	// _, err := s.db.ExecContext(ctx, query, quantity, id)
+
+	if result.Error != nil {
+		return result.Error
 	}
 
 	return nil

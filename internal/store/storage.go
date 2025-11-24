@@ -24,10 +24,10 @@ type Storage struct {
 		Register(context.Context, request.RegisterReq) error
 	}
 	ICart interface {
-		AddToCart(context.Context, request.AddToCartRequest, int64) error
-		GetCart(context.Context, int64, request.PaginationRequest) (response.CartsResponse, error)
-		DeleteFromCart(context.Context, int64) error
-		UpdateQuantityCart(context.Context, int64, int64) error		
+		AddToCart(context.Context, request.AddToCartRequest, int) error
+		GetCart(context.Context, int, request.PaginationRequest) (response.CartsResponse, error)
+		DeleteFromCart(context.Context, int) error
+		UpdateQuantityCart(context.Context, int, int) error		
 	}
 	IOrder interface {
 		CreateOrder(context.Context, data.CreateOrderStruct) error

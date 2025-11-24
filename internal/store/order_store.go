@@ -62,7 +62,7 @@ func (s *OrderStore) UpdateStatusOrder(ctx context.Context, invoiceID string, st
 	}
 
 	if rows == 0 {
-		return fmt.Errorf("No order found with invoice id %s", invoiceID)
+		return fmt.Errorf("no order found with invoice id %s", invoiceID)
 	}
 
 	return nil

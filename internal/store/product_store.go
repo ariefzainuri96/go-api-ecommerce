@@ -110,7 +110,7 @@ func (s *ProductStore) DeleteProduct(ctx context.Context, id int64) error {
 	}
 
 	if row == 0 {
-		return fmt.Errorf("No product found with id %d", id)
+		return fmt.Errorf("no product found with id %d", id)
 	}
 
 	return nil

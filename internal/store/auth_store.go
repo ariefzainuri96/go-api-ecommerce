@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-
 	"golang.org/x/crypto/bcrypt"
-
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
@@ -35,7 +33,7 @@ func (store *AuthStore) Login(ctx context.Context, body request.LoginRequest) (r
 	err = bcrypt.CompareHashAndPassword([]byte(password), []byte(body.Password))
 
 	if err != nil {
-		return login, errors.New("Invalid email or password!")
+		return login, errors.New("invalid email or password")
 	}
 
 	log.Println("userid", login.ID)
