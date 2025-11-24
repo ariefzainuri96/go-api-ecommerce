@@ -82,7 +82,6 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 // @Failure      404  			{object}  response.BaseResponse
 // @Router       /cart/getall	[get]
 func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
-	var baseResponse response.BaseResponse
 	var request request.PaginationRequest
 
 	user, ok := middleware.GetUserFromContext(r)
@@ -95,10 +94,7 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&request, r.URL.Query())
 
 	if err != nil {
-		baseResponse.Status = http.StatusBadRequest
-		baseResponse.Message = "invalid request"
-		resp, _ := baseResponse.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 
@@ -107,17 +103,11 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 	resp, err := app.store.ICart.GetCart(r.Context(), userId, request)
 
 	if err != nil {
-		baseResponse.Status = http.StatusInternalServerError
-		baseResponse.Message = err.Error()
-		resp, _ := baseResponse.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
+		app.respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	cartResponse, _ := resp.MarshalResponse()
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(cartResponse)
+	app.writeJSON(w, http.StatusOK, resp)
 }
 
 func (app *application) deleteCart(w http.ResponseWriter, r *http.Request) {

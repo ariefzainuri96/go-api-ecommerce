@@ -60,7 +60,7 @@ func (s *CartStore) GetCart(ctx context.Context, userID int64, req request.Pagin
 		Preload("Product", nil).
 		// if you want to perform, like search or filtering using field from the related table,
 		// you should make Joins first
-		Joins("INNER JOIN products ON carts.product_id = products.id")
+		Joins("INNER JOIN products ON products.id = carts.product_id")
 
 	var searchAllQuery string
 
@@ -76,7 +76,7 @@ func (s *CartStore) GetCart(ctx context.Context, userID int64, req request.Pagin
 
 	return response.CartsResponse{
 		BaseResponse: response.BaseResponse{
-			Message: "success",
+			Message: "Success",
 			Status:  http.StatusOK,
 		},
 		Carts:      result.Data,

@@ -13,6 +13,13 @@ type Cart struct {
 	Product   Product `json:"product"`
 }
 
+/*
+	for filtering field use like this for [carts] table:
+	- carts.quantity -> even for current table filtering, always call the table name like this
+	- products.name -> filter using products table with field name -> 
+	remember to not using struct field -> always use real tables and field name
+*/
+
 func (Cart) TableName() string {
 	return "carts"
 }

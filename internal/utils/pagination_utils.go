@@ -26,47 +26,38 @@ func ApplyPagination[T any](db *gorm.DB, req request.PaginationRequest, searchAl
 	// --- 1. Base Query and Counting ---
 
 	// The initial query used for counting (no offset/limit/order)
-	countQuery := db.Model(new(T))
+	countQuery := db.Session(&gorm.Session{})
 
 	// The query used for fetching paginated data
-	paginatedQuery := db.Model(new(T))
+	paginatedQuery := db.Session(&gorm.Session{})
 
 	// --- 2. Apply Filtering (DRY principle applied) ---
 
-	// Create a function closure to apply filters to BOTH count and paginated queries
-	applyFilters := func(q *gorm.DB) *gorm.DB {
-		// 1. Specific Field Search (No change needed here, as it uses req.SearchField)
-		if req.SearchField != "" && req.SearchValue != "" {
-			// ... (existing SearchField logic remains) ...
-			return q.Where(fmt.Sprintf("CAST(%s AS TEXT) ILIKE ?", req.SearchField), "%"+req.SearchValue+"%")
-		}
+	// 1. Specific Field Search
+	if req.SearchField != "" && req.SearchValue != "" {
+		whereClause := fmt.Sprintf("CAST(%s AS TEXT) ILIKE ?", req.SearchField)
 
-		// 2. Generic SearchAll Logic (Uses the provided map)
-		if req.SearchAll != "" && searchAllQuery != "" {
-			search := "%" + req.SearchAll + "%"
+		// Apply to both clones
+		countQuery = countQuery.Where(whereClause, "%"+req.SearchValue+"%")
+		paginatedQuery = paginatedQuery.Where(whereClause, "%"+req.SearchValue+"%")
+	}
 
-			howManyFields := strings.Count(searchAllQuery, "?")
+	// 2. Generic SearchAll Logic
+	if req.SearchAll != "" && searchAllQuery != "" {
+		search := "%" + req.SearchAll + "%"
+		howManyFields := strings.Count(searchAllQuery, "?")
 
-			if howManyFields == 0 {
-				return q
-			}
-
+		if howManyFields > 0 {
 			args := make([]interface{}, howManyFields)
-
 			for i := range howManyFields {
 				args[i] = search
 			}
 
-			// Apply the dynamic WHERE clause
-			return q.Where(searchAllQuery, args...)
+			// Apply to both clones
+			countQuery = countQuery.Where(searchAllQuery, args...)
+			paginatedQuery = paginatedQuery.Where(searchAllQuery, args...)
 		}
-
-		return q
 	}
-
-	// Apply the filters to both queries
-	countQuery = applyFilters(countQuery)
-	paginatedQuery = applyFilters(paginatedQuery)
 
 	// --- 3. Execute Count (Fail Fast) ---
 
@@ -85,7 +76,7 @@ func ApplyPagination[T any](db *gorm.DB, req request.PaginationRequest, searchAl
 	if req.OrderBy != "" {
 		orderBy = req.OrderBy
 	}
-	
+
 	sortDirection := "ASC"
 	if strings.ToUpper(req.Sort) == "DESC" {
 		sortDirection = "DESC"

@@ -53,7 +53,6 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 	err = app.store.IProduct.AddProduct(r.Context(), &data)
 
 	if err != nil {
-		log.Println(err.Error())
 		baseResp.Status = http.StatusInternalServerError
 		baseResp.Message = "Internal server error"
 		resp, _ := baseResp.MarshalBaseResponse()
@@ -87,12 +86,7 @@ func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&data, r.URL.Query())
 
 	if err != nil {
-		log.Printf("Error getProduct: %v", err.Error())
-		baseResp := response.BaseResponse{}
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "invalid request"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 
@@ -102,26 +96,19 @@ func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
 		products, err = app.store.IProduct.SearchProduct(r.Context(), data.SearchAll)
 	}
 
-	baseResp := response.BaseResponse{}
-
 	if err != nil {
 		log.Println(err.Error())
-		baseResp.Status = http.StatusInternalServerError
-		baseResp.Message = "internal server error"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
+		app.respondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success"
-	productResp, _ := response.ProductsResponse{
-		BaseResponse: baseResp,
-		Products:     products,
-	}.MarshalProductsResponse()
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(productResp)
+	app.writeJSON(w, http.StatusOK, response.ProductsResponse{
+		BaseResponse: response.BaseResponse{
+			Message: "Success",
+			Status:  http.StatusOK,
+		},
+		Products: products,
+	})
 }
 
 func (app *application) deleteProduct(w http.ResponseWriter, r *http.Request) {
