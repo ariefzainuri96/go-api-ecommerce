@@ -13,7 +13,7 @@ import (
 
 type Storage struct {
 	IProduct interface {
-		GetAllProduct(context.Context) ([]entity.Product, error)
+		GetProduct(context.Context, request.PaginationRequest) (response.ProductsResponse, error)
 		AddProduct(context.Context, *request.AddProductRequest) error
 		DeleteProduct(context.Context, int64) error
 		PatchProduct(context.Context, int64, map[string]any) error

@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-
-	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
@@ -27,15 +25,11 @@ var decoder = schema.NewDecoder()
 // @Failure      404  			{object}  response.BaseResponse
 // @Router       /product/add	[post]
 func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
-	baseResp := response.BaseResponse{}
-
 	var data request.AddProductRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
+
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "Invalid request"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 	defer r.Body.Close()
@@ -43,29 +37,21 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 	err = app.validator.Struct(data)
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = err.Error()
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = app.store.IProduct.AddProduct(r.Context(), &data)
 
 	if err != nil {
-		baseResp.Status = http.StatusInternalServerError
-		baseResp.Message = "Internal server error"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
+		app.respondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success add product"
-	resp, _ := baseResp.MarshalBaseResponse()
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	app.writeJSON(w, http.StatusOK, response.BaseResponse{
+		Status:  http.StatusOK,
+		Message: "Success add product",
+	})
 }
 
 // @Summary      Get Product
@@ -81,7 +67,6 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 // @Router       /product/getall	[get]
 func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
 	var data request.PaginationRequest
-	var products []entity.Product
 
 	err := decoder.Decode(&data, r.URL.Query())
 
@@ -90,25 +75,14 @@ func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if data.SearchAll == "" {
-		products, err = app.store.IProduct.GetAllProduct(r.Context())
-	} else {
-		products, err = app.store.IProduct.SearchProduct(r.Context(), data.SearchAll)
-	}
+	product, err := app.store.IProduct.GetProduct(r.Context(), data)
 
 	if err != nil {
-		log.Println(err.Error())
 		app.respondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.ProductsResponse{
-		BaseResponse: response.BaseResponse{
-			Message: "Success",
-			Status:  http.StatusOK,
-		},
-		Products: products,
-	})
+	app.writeJSON(w, http.StatusOK, product)
 }
 
 func (app *application) deleteProduct(w http.ResponseWriter, r *http.Request) {

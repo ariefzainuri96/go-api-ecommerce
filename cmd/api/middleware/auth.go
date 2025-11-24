@@ -17,7 +17,7 @@ type contextKey string
 const UserContextKey contextKey = "user"
 
 // Generate JWT Token
-func GenerateToken(email string, isAdmin bool, id int64) (string, error) {
+func GenerateToken(email string, isAdmin bool, id int) (string, error) {
 	jwtSecret := strings.TrimSpace(os.Getenv("SECRET_KEY"))
 
 	claims := jwt.MapClaims{
@@ -71,13 +71,13 @@ func Authentication(next http.Handler) http.Handler {
 		}
 
 		// Extract data from token
-		userId, _ := claims["user_id"].(float64) // JWT stores numbers as float64
+		userId, _ := claims["user_id"].(int) // JWT stores numbers as int
 		email, _ := claims["email"].(string)
 		isAdmin, _ := claims["is_admin"].(bool)
 
 		// Store the user data in the request context
 		ctx := context.WithValue(r.Context(), UserContextKey, map[string]any{
-			"user_id":  int64(userId),
+			"user_id":  userId,
 			"email":    email,
 			"is_admin": isAdmin,
 		})

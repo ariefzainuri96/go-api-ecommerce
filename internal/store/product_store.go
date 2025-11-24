@@ -5,10 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/utils"
 	"gorm.io/gorm"
 )
 
@@ -61,34 +64,36 @@ func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductR
 // 	return blog, nil
 // }
 
-func (s *ProductStore) GetAllProduct(ctx context.Context) ([]entity.Product, error) {
+func (s *ProductStore) GetProduct(ctx context.Context, req request.PaginationRequest) (response.ProductsResponse, error) {
 	var products []entity.Product
 
-	query := `
-		SELECT id, name, description, price, quantity, created_at
-		FROM products;
-	`
+	query := s.gormDb.Find(&products)
 
-	rows, err := s.db.QueryContext(ctx, query)
+	var searchAllQuery string
 
-	if err != nil {
-		return nil, err
+	if req.SearchAll != "" {
+		searchAllQuery = `
+		products.name ILIKE ?
+		OR products.description ILIKE ?
+		OR CAST(products.quantity as TEXT) ILIKE ?
+		OR CAST(products.price as TEXT) ILIKE ?
+		`
 	}
 
-	defer rows.Close()
+	result := utils.ApplyPagination[entity.Product](query, req, searchAllQuery)
 
-	for rows.Next() {
-		var product entity.Product
-		err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Quantity, &product.CreatedAt)
-
-		if err != nil {
-			return nil, err
-		}
-
-		products = append(products, product)
+	if result.Error != nil {
+		return response.ProductsResponse{}, result.Error
 	}
 
-	return products, nil
+	return response.ProductsResponse{
+		BaseResponse: response.BaseResponse{
+			Message: "Success",
+			Status:  http.StatusOK,
+		},
+		Products:      result.Data,
+		Pagination: result.Pagination,
+	}, nil
 }
 
 func (s *ProductStore) DeleteProduct(ctx context.Context, id int64) error {

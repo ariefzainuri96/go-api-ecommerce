@@ -26,7 +26,7 @@ func (r *LoginResponse) Unmarshal(data []byte) error {
 
 // @Model
 type LoginData struct {
-	ID    int64  `json:"id"`
+	ID    int    `json:"id"`
 	Token string `json:"token"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
