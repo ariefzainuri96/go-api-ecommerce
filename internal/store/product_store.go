@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"github.com/ariefzainuri96/go-api-ecommerce/internal/utils"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -21,7 +23,7 @@ func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductR
 	product := entity.Product{
 		Name:        body.Name,
 		Description: body.Description,
-		Price:       int64(body.Price),
+		Price:       decimal.NewFromFloat(body.Price),
 		Quantity:    body.Quantity,
 	}
 
