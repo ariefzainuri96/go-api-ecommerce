@@ -3,10 +3,9 @@ package store
 import (
 	"context"
 	"database/sql"
-
-	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	response "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
+	entity "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
 	"gorm.io/gorm"
 )
@@ -14,10 +13,9 @@ import (
 type Storage struct {
 	IProduct interface {
 		GetProduct(context.Context, request.PaginationRequest) (response.ProductsResponse, error)
-		AddProduct(context.Context, *request.AddProductRequest) error
-		DeleteProduct(context.Context, int64) error
-		PatchProduct(context.Context, int64, map[string]any) error
-		SearchProduct(context.Context, string) ([]entity.Product, error)
+		AddProduct(context.Context, *request.AddProductRequest) (entity.Product, error)
+		DeleteProduct(context.Context, uint) error
+		PatchProduct(context.Context, uint, map[string]any) (entity.Product, error)		
 	}
 	IAuth interface {
 		Login(context.Context, request.LoginRequest) (response.LoginData, error)

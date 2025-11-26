@@ -10,3 +10,8 @@ type ProductsResponse struct {
 	Products []en.Product `json:"products"`
 	Pagination PaginationMetadata `json:"pagination"`
 }
+
+type ProductResponse struct {
+	BaseResponse
+	Product en.Product `json:"product"`
+}

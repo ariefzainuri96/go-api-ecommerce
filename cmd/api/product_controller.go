@@ -2,13 +2,12 @@ package main
 
 import (
 	"encoding/json"
-	"log"
-	"net/http"
-	"strconv"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"github.com/gorilla/schema"
+	"net/http"
+	"strconv"
 )
 
 var decoder = schema.NewDecoder()
@@ -20,7 +19,7 @@ var decoder = schema.NewDecoder()
 // @Produce      json
 // @Param        request		body	  request.AddProductRequest	true "Add Product request"
 // @security 	 ApiKeyAuth
-// @Success      200  			{object}  response.BaseResponse
+// @Success      200  			{object}  response.ProductResponse
 // @Failure      400  			{object}  response.BaseResponse
 // @Failure      404  			{object}  response.BaseResponse
 // @Router       /product/add	[post]
@@ -41,16 +40,19 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.IProduct.AddProduct(r.Context(), &data)
+	product, err := app.store.IProduct.AddProduct(r.Context(), &data)
 
 	if err != nil {
 		app.respondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.BaseResponse{
-		Status:  http.StatusOK,
-		Message: "Success add product",
+	app.writeJSON(w, http.StatusOK, response.ProductResponse{
+		BaseResponse: response.BaseResponse{
+			Status:  http.StatusOK,
+			Message: "Success add product",
+		},
+		Product: product,
 	})
 }
 
@@ -85,48 +87,54 @@ func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, product)
 }
 
+// @Summary      Delete Product
+// @Description  Delete product
+// @Tags         product
+// @Produce      json
+// @Param        id   					path      int  true  "Product ID"
+// @security 	 ApiKeyAuth
+// @Success      200  					{object}  response.BaseResponse
+// @Failure      400  					{object}  response.BaseResponse
+// @Failure      404  					{object}  response.BaseResponse
+// @Router       /product/remove/{id}	[delete]
 func (app *application) deleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 
-	baseResp := response.BaseResponse{}
-
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "invalid id"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
-	err = app.store.IProduct.DeleteProduct(r.Context(), int64(id))
+	err = app.store.IProduct.DeleteProduct(r.Context(), uint(id))
 
 	if err != nil {
-		log.Println(err.Error())
-		baseResp.Status = http.StatusInternalServerError
-		baseResp.Message = err.Error()
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
+		app.respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success delete product"
-
-	baseRespJson, _ := baseResp.MarshalBaseResponse()
-	w.WriteHeader(http.StatusOK)
-	w.Write(baseRespJson)
+	app.writeJSON(w, http.StatusOK, response.BaseResponse{
+		Status:  http.StatusOK,
+		Message: "Success delete product",
+	})
 }
 
+// @Summary      Patch Product
+// @Description  Patch product
+// @Tags         product
+// @Accept       json
+// @Produce      json
+// @Param 		 id						path      int  true  "Product ID"
+// @Param        request				body	  request.AddProductRequest	true "Add Product request"
+// @security 	 ApiKeyAuth
+// @Success      200  					{object}  response.ProductResponse
+// @Failure      400  					{object}  response.BaseResponse
+// @Failure      404  					{object}  response.BaseResponse
+// @Router       /product/update/{id}	[patch]
 func (app *application) patchProduct(w http.ResponseWriter, r *http.Request) {
 	productID, err := strconv.Atoi(r.PathValue("id"))
 
-	baseResp := response.BaseResponse{}
-
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "invalid id"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
@@ -134,10 +142,7 @@ func (app *application) patchProduct(w http.ResponseWriter, r *http.Request) {
 	var updateData map[string]any
 	err = json.NewDecoder(r.Body).Decode(&updateData)
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "invalid request"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 	defer r.Body.Close()
@@ -148,23 +153,20 @@ func (app *application) patchProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.IProduct.PatchProduct(r.Context(), int64(productID), updateData)
+	product, err := app.store.IProduct.PatchProduct(r.Context(), uint(productID), updateData)
 
 	if err != nil {
-		log.Println(err.Error())
-		baseResp.Status = http.StatusInternalServerError
-		baseResp.Message = "internal server error"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
+		app.respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success patch product"
-
-	resp, _ := baseResp.MarshalBaseResponse()
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	app.writeJSON(w, http.StatusOK, response.ProductResponse{
+		BaseResponse: response.BaseResponse{
+			Status:  http.StatusOK,
+			Message: "Success patch product",
+		},
+		Product: product,
+	})
 }
 
 func (app *application) ProductRouter() *http.ServeMux {

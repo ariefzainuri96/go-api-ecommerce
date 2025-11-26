@@ -4,10 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
-	"strings"
-
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
@@ -20,14 +17,7 @@ type ProductStore struct {
 	gormDb *gorm.DB
 }
 
-func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductRequest) error {
-	// query := `
-	// 	INSERT INTO products (name, description, price, quantity)
-	// 	VALUES ($1, $2, $3, $4);
-	// `
-
-	// _, err := s.db.ExecContext(ctx, query, body.Name, body.Description, body.Price, body.Quantity)
-
+func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductRequest) (entity.Product, error) {
 	product := entity.Product{
 		Name:        body.Name,
 		Description: body.Description,
@@ -38,31 +28,11 @@ func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductR
 	result := s.gormDb.WithContext(ctx).Create(&product)
 
 	if result.Error != nil {
-		return result.Error
+		return entity.Product{}, result.Error
 	}
 
-	return nil
+	return product, nil
 }
-
-// func (s *ProductStore) GetById(ctx context.Context, id int64) (response.Blog, error) {
-// 	var blog response.Blog
-
-// 	query := `
-// 		SELECT id, title, description, created_at
-// 		FROM blogs
-// 		WHERE id = $1;
-// 	`
-
-// 	err := s.db.
-// 		QueryRowContext(ctx, query, id).
-// 		Scan(&blog.ID, &blog.Title, &blog.Description, &blog.CreatedAt)
-
-// 	if err != nil {
-// 		return blog, err
-// 	}
-
-// 	return blog, nil
-// }
 
 func (s *ProductStore) GetProduct(ctx context.Context, req request.PaginationRequest) (response.ProductsResponse, error) {
 	var products []entity.Product
@@ -91,92 +61,50 @@ func (s *ProductStore) GetProduct(ctx context.Context, req request.PaginationReq
 			Message: "Success",
 			Status:  http.StatusOK,
 		},
-		Products:      result.Data,
+		Products:   result.Data,
 		Pagination: result.Pagination,
 	}, nil
 }
 
-func (s *ProductStore) DeleteProduct(ctx context.Context, id int64) error {
-	query := `
-		DELETE FROM products
-		WHERE id = $1;
-	`
-
-	result, err := s.db.ExecContext(ctx, query, id)
-
-	if err != nil {
-		return err
+func (s *ProductStore) DeleteProduct(ctx context.Context, id uint) error {
+	product := entity.Product{
+		BaseEntity: entity.BaseEntity{
+			ID: id,
+		},
 	}
 
-	row, err := result.RowsAffected()
+	result := s.gormDb.Delete(&product)
 
-	if err != nil {
-		return err
+	if result.Error != nil {
+		return result.Error
 	}
 
-	if row == 0 {
+	if result.RowsAffected == 0 {
 		return fmt.Errorf("no product found with id %d", id)
 	}
 
 	return nil
 }
 
-func (s *ProductStore) PatchProduct(ctx context.Context, id int64, patch map[string]any) error {
-	query := "UPDATE products SET "
-	args := []any{}
-	i := 1
+func (s *ProductStore) PatchProduct(ctx context.Context, id uint, patch map[string]any) (entity.Product, error) {
 
-	for key, value := range patch {
-		query += fmt.Sprintf("%s = $%d,", key, i)
-		args = append(args, value)
-		i++
+	product := entity.Product {
+		BaseEntity: entity.BaseEntity{ ID: id },
 	}
 
-	// Remove trailing comma and add WHERE clause
-	query = strings.TrimSuffix(query, ",")
-	query += fmt.Sprintf(" WHERE id = $%d", i)
-	args = append(args, id)
+	result := s.gormDb.Model(&product).Updates(patch)
 
-	// Execute the query
-	_, err := s.db.ExecContext(ctx, query, args...)
-
-	if err != nil {
-		return err
+	if result.Error != nil {
+		return entity.Product{}, result.Error
 	}
 
-	return nil
-}
-
-func (s *ProductStore) SearchProduct(ctx context.Context, search string) ([]entity.Product, error) {
-	var products []entity.Product
-
-	query := `
-		SELECT * FROM products
-		WHERE LOWER (name) ILIKE $1
-		OR LOWER (description) ILIKE $1;
-	`
-
-	searchTerm := "%" + search + "%"
-
-	rows, err := s.db.QueryContext(ctx, query, searchTerm)
-
-	if err != nil {
-		log.Println(err.Error())
-		return nil, err
+	if result.RowsAffected == 0 {
+		return entity.Product{}, fmt.Errorf("no product found with id %v", id)
 	}
 
-	defer rows.Close()
+	if err := s.gormDb.First(&product, id).Error; err != nil {
+        return entity.Product{}, err
+    }
 
-	for rows.Next() {
-		var product entity.Product
-		err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Quantity, &product.CreatedAt)
-
-		if err != nil {
-			return nil, err
-		}
-
-		products = append(products, product)
-	}
-
-	return products, nil
+	return product, nil
 }
