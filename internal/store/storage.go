@@ -3,10 +3,12 @@ package store
 import (
 	"context"
 	"database/sql"
+
 	entity "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	response "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
+	"github.com/ariefzainuri96/go-api-ecommerce/internal/utils"
 	"gorm.io/gorm"
 )
 
@@ -22,8 +24,8 @@ type Storage struct {
 		Register(context.Context, request.RegisterReq) error
 	}
 	ICart interface {
-		AddToCart(context.Context, request.AddToCartRequest, int) ([]entity.Cart, error)
-		GetCart(context.Context, int, request.PaginationRequest) ([]entity.Cart, error)
+		AddToCart(context.Context, request.AddToCartRequest, int) (entity.Cart, error)
+		GetCart(context.Context, int, request.PaginationRequest) (utils.PaginateResult[entity.Cart], error)
 		DeleteFromCart(context.Context, int) error
 		UpdateQuantityCart(context.Context, int, map[string]any) (entity.Cart, error)
 	}

@@ -1,17 +1,30 @@
 package middleware
 
 import (
+	"bytes"
 	"net/http"
 )
 
 type wrappedWriter struct {
 	http.ResponseWriter
 	statusCode int
+	body       bytes.Buffer
 }
 
 func (w *wrappedWriter) WriteHeader(statusCode int) {
-	w.ResponseWriter.WriteHeader(statusCode)
-	w.statusCode = statusCode
+	// Only set the status code once
+    if w.statusCode == http.StatusOK {
+        w.statusCode = statusCode
+    }
+    w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *wrappedWriter) Write(p []byte) (int, error) {
+    // 1. Write to the buffer (capture for logging)
+    w.body.Write(p)
+    
+    // 2. Write to the underlying ResponseWriter (send to client)
+    return w.ResponseWriter.Write(p)
 }
 
 type Middleware func(http.Handler) http.Handler

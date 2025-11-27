@@ -16,16 +16,22 @@ func (r UpdateCartRequest) Marshal() ([]byte, error) {
 	return marshal, nil
 }
 
-// func (r *UpdateCartRequest) Unmarshal(data []byte, dataMap *map[string]any) error {
-// 	return json.Unmarshal(data, &dataMap)
-// }
+func (r *UpdateCartRequest) Unmarshal(data []byte) error {
+	return json.Unmarshal(data, &r)
+}
 
-func (r UpdateCartRequest) Unmarshal(dataMap *map[string]any) error {
+func (r UpdateCartRequest) ToMap() (map[string]any, error) {
 	data, err := r.Marshal()
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return json.Unmarshal(data, &dataMap)
+	var dataMap map[string]any
+	
+	if err = json.Unmarshal(data, &dataMap); err != nil {
+		return nil, err
+	}
+
+	return dataMap, nil	
 }

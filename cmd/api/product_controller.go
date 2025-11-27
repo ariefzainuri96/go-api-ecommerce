@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
+	"strconv"
+
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/utils"
 	"github.com/gorilla/schema"
-	"net/http"
-	"strconv"
 )
 
 var decoder = schema.NewDecoder()
@@ -28,7 +30,7 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&data)
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid request")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 	defer r.Body.Close()
@@ -36,18 +38,18 @@ func (app *application) addProduct(w http.ResponseWriter, r *http.Request) {
 	err = app.validator.Struct(data)
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, err.Error())
+		utils.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	product, err := app.store.IProduct.AddProduct(r.Context(), &data)
 
 	if err != nil {
-		app.respondError(w, http.StatusInternalServerError, "Internal server error")
+		utils.RespondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.ProductResponse{
+	utils.WriteJSON(w, http.StatusOK, response.ProductResponse{
 		BaseResponse: response.BaseResponse{
 			Status:  http.StatusOK,
 			Message: "Success add product",
@@ -73,18 +75,18 @@ func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&data, r.URL.Query())
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid request")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 
 	product, err := app.store.IProduct.GetProduct(r.Context(), data)
 
 	if err != nil {
-		app.respondError(w, http.StatusInternalServerError, "Internal server error")
+		utils.RespondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, product)
+	utils.WriteJSON(w, http.StatusOK, product)
 }
 
 // @Summary      Delete Product
@@ -101,18 +103,18 @@ func (app *application) deleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid id")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
 	err = app.store.IProduct.DeleteProduct(r.Context(), uint(id))
 
 	if err != nil {
-		app.respondError(w, http.StatusInternalServerError, err.Error())
+		utils.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.BaseResponse{
+	utils.WriteJSON(w, http.StatusOK, response.BaseResponse{
 		Status:  http.StatusOK,
 		Message: "Success delete product",
 	})
@@ -134,7 +136,7 @@ func (app *application) patchProduct(w http.ResponseWriter, r *http.Request) {
 	productID, err := strconv.Atoi(r.PathValue("id"))
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid id")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
@@ -142,7 +144,7 @@ func (app *application) patchProduct(w http.ResponseWriter, r *http.Request) {
 	var updateData map[string]any
 	err = json.NewDecoder(r.Body).Decode(&updateData)
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid request")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 	defer r.Body.Close()
@@ -156,11 +158,11 @@ func (app *application) patchProduct(w http.ResponseWriter, r *http.Request) {
 	product, err := app.store.IProduct.PatchProduct(r.Context(), uint(productID), updateData)
 
 	if err != nil {
-		app.respondError(w, http.StatusInternalServerError, err.Error())
+		utils.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.ProductResponse{
+	utils.WriteJSON(w, http.StatusOK, response.ProductResponse{
 		BaseResponse: response.BaseResponse{
 			Status:  http.StatusOK,
 			Message: "Success patch product",

@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"golang.org/x/crypto/bcrypt"
+
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthStore struct {

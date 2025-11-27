@@ -2,13 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/utils"
 )
 
 // @Summary      Add Cart
@@ -27,40 +27,38 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&data)
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid request!")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid request!")
 		return
 	}
 	defer r.Body.Close()
 
 	user, ok := middleware.GetUserFromContext(r)
 
-	log.Printf("user: %v", user)
-
 	if !ok {
-		app.respondError(w, http.StatusUnauthorized, "Unauthorized, please re login!")
+		utils.RespondError(w, http.StatusUnauthorized, "Unauthorized, please re login!")
 		return
 	}
 
 	err = app.validator.Struct(data)
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, err.Error())
+		utils.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	carts, err := app.store.ICart.AddToCart(r.Context(), data, user["user_id"].(int))
+	cart, err := app.store.ICart.AddToCart(r.Context(), data, user["user_id"].(int))
 
 	if err != nil {
-		app.respondError(w, http.StatusInternalServerError, "Internal server error!")
+		utils.RespondError(w, http.StatusInternalServerError, "Internal server error!")
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.CartsResponse{
+	utils.WriteJSON(w, http.StatusOK, response.CartResponse{
 		BaseResponse: response.BaseResponse{
 			Status:  http.StatusOK,
 			Message: "Success",
 		},
-		Carts: carts,
+		Cart: cart,
 	})
 }
 
@@ -88,23 +86,24 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 	err := decoder.Decode(&request, r.URL.Query())
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid request")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 
-	carts, err := app.store.ICart.GetCart(r.Context(), user["user_id"].(int), request)
+	result, err := app.store.ICart.GetCart(r.Context(), user["user_id"].(int), request)
 
 	if err != nil {
-		app.respondError(w, http.StatusInternalServerError, err.Error())
+		utils.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.CartsResponse{
+	utils.WriteJSON(w, http.StatusOK, response.CartsResponse{
 		BaseResponse: response.BaseResponse{
-			Status: http.StatusOK,
+			Status:  http.StatusOK,
 			Message: "Success",
 		},
-		Carts: carts,
+		Carts: result.Data,
+		Pagination: result.Pagination,
 	})
 }
 
@@ -123,18 +122,18 @@ func (app *application) deleteCart(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid id")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
 	err = app.store.ICart.DeleteFromCart(r.Context(), id)
 
 	if err != nil {
-		app.respondError(w, http.StatusInternalServerError, err.Error())
+		utils.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.BaseResponse{
+	utils.WriteJSON(w, http.StatusOK, response.BaseResponse{
 		Status:  http.StatusOK,
 		Message: "Success delete cart!",
 	})
@@ -156,14 +155,14 @@ func (app *application) updateCart(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid id")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid id")
 		return
 	}
 
 	var updateData request.UpdateCartRequest
 	err = json.NewDecoder(r.Body).Decode(&updateData)
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, "Invalid request")
+		utils.RespondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 	defer r.Body.Close()
@@ -171,26 +170,25 @@ func (app *application) updateCart(w http.ResponseWriter, r *http.Request) {
 	err = app.validator.Struct(updateData)
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, err.Error())
+		utils.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	var data map[string]any
-	err = updateData.Unmarshal(&data)
+	data, err := updateData.ToMap()
 
 	if err != nil {
-		app.respondError(w, http.StatusBadRequest, err.Error())
+		utils.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	cart, err := app.store.ICart.UpdateQuantityCart(r.Context(), id, data)
 
 	if err != nil {
-		app.respondError(w, http.StatusInternalServerError, "Internal server error")
+		utils.RespondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.CartResponse{
+	utils.WriteJSON(w, http.StatusOK, response.CartResponse{
 		BaseResponse: response.BaseResponse{
 			Status:  http.StatusOK,
 			Message: "Success updating cart!",

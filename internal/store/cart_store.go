@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/internal/utils"
@@ -15,39 +16,34 @@ type CartStore struct {
 	gormDb *gorm.DB
 }
 
-func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest, userId int) ([]entity.Cart, error) {
+func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest, userId int) (entity.Cart, error) {
 	// query := `
 	// 	INSERT INTO carts (product_id, quantity, user_id)
 	// 	VALUES ($1, $2, $3);
 	// `
 
+	cart := entity.Cart{
+		ProductId: body.ProductID,
+		UserId:    userId,
+		Quantity:  body.Quantity,
+	}
+
 	result := s.gormDb.
 		WithContext(ctx).
-		Create(&entity.Cart{
-			ProductId: body.ProductID,
-			UserId:    userId,
-			Quantity:  body.Quantity,
-		})
-
-	var carts []entity.Cart
+		Create(&cart)
 
 	if result.Error != nil {
-		return carts, result.Error
+		return cart, result.Error
 	}
 
-	resultCart := s.gormDb.
+	if err := s.gormDb.
 		WithContext(ctx).
-		Where(&entity.Cart{
-			UserId: userId,
-		}).
 		Preload("Product", nil).
-		Find(&carts)
-
-	if resultCart.Error != nil {
-		return carts, result.Error
+		First(&cart, cart.ID).Error; err != nil {
+		return cart, err
 	}
 
-	return carts, nil
+	return cart, nil
 }
 
 func (s *CartStore) DeleteFromCart(ctx context.Context, productID int) error {
@@ -70,7 +66,7 @@ func (s *CartStore) DeleteFromCart(ctx context.Context, productID int) error {
 	return nil
 }
 
-func (s *CartStore) GetCart(ctx context.Context, userID int, req request.PaginationRequest) ([]entity.Cart, error) {
+func (s *CartStore) GetCart(ctx context.Context, userID int, req request.PaginationRequest) (utils.PaginateResult[entity.Cart], error) {
 	query := s.gormDb.
 		WithContext(ctx).
 		Model(&entity.Cart{}).
@@ -89,10 +85,10 @@ func (s *CartStore) GetCart(ctx context.Context, userID int, req request.Paginat
 	result := utils.ApplyPagination[entity.Cart](query, req, searchAllQuery)
 
 	if result.Error != nil {
-		return []entity.Cart{}, result.Error
+		return utils.PaginateResult[entity.Cart]{}, result.Error
 	}
 
-	return result.Data, nil
+	return result, nil
 }
 
 func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int, data map[string]any) (entity.Cart, error) {
