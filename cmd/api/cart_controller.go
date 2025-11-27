@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -17,57 +18,50 @@ import (
 // @Produce      json
 // @Param        request		body	  request.AddToCartRequest	true "Add cart request"
 // @security 	 ApiKeyAuth
-// @Success      200  			{object}  response.BaseResponse
+// @Success      200  			{object}  response.CartsResponse
 // @Failure      400  			{object}  response.BaseResponse
 // @Failure      404  			{object}  response.BaseResponse
 // @Router       /cart/add		[post]
 func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
-	var baseResp response.BaseResponse
-
 	var data request.AddToCartRequest
 	err := json.NewDecoder(r.Body).Decode(&data)
+
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "Invalid request"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, "Invalid request!")
 		return
 	}
 	defer r.Body.Close()
 
 	user, ok := middleware.GetUserFromContext(r)
 
+	log.Printf("user: %v", user)
+
 	if !ok {
-		http.Error(w, "Unauthorized, please re login!", http.StatusUnauthorized)
+		app.respondError(w, http.StatusUnauthorized, "Unauthorized, please re login!")
 		return
 	}
 
 	err = app.validator.Struct(data)
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = err.Error()
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		app.respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err = app.store.ICart.AddToCart(r.Context(), data, user["user_id"].(int))
+	carts, err := app.store.ICart.AddToCart(r.Context(), data, user["user_id"].(int))
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = err.Error()
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
+		app.respondError(w, http.StatusInternalServerError, "Internal server error!")
 		return
 	}
 
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success add to cart!"
-
-	resp, _ := baseResp.MarshalBaseResponse()
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	app.writeJSON(w, http.StatusOK, response.CartsResponse{
+		BaseResponse: response.BaseResponse{
+			Status:  http.StatusOK,
+			Message: "Success",
+		},
+		Carts: carts,
+	})
 }
 
 // @Summary      Get Cart
@@ -108,6 +102,17 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, resp)
 }
 
+// @Summary      Delete Cart
+// @Description  Delete cart
+// @Tags         cart
+// @Accept       json
+// @Produce      json
+// @Param        id   				path      int  true  "Cart ID"
+// @security 	 ApiKeyAuth
+// @Success      200  				{object}  response.BaseResponse
+// @Failure      400  				{object}  response.BaseResponse
+// @Failure      404  				{object}  response.BaseResponse
+// @Router       /cart/remove/{id}	[delete]
 func (app *application) deleteCart(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 
@@ -129,6 +134,18 @@ func (app *application) deleteCart(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// @Summary      Update Cart
+// @Description  Update cart data
+// @Tags         cart
+// @Accept       json
+// @Produce      json
+// @Param        id   					path      int  true  "Cart ID"
+// @Param        request				body	  request.AddToCartRequest	true "Update cart request"
+// @security 	 ApiKeyAuth
+// @Success      200  					{object}  response.CartResponse
+// @Failure      400  					{object}  response.BaseResponse
+// @Failure      404  					{object}  response.BaseResponse
+// @Router       /cart/update/{id}		[patch]
 func (app *application) updateCart(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 
@@ -152,16 +169,27 @@ func (app *application) updateCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = app.store.ICart.UpdateQuantityCart(r.Context(), id, updateData.Quantity)
+	var data map[string]any
+	err = updateData.Unmarshal(&data)
+
+	if err != nil {
+		app.respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	cart, err := app.store.ICart.UpdateQuantityCart(r.Context(), id, data)
 
 	if err != nil {
 		app.respondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, response.BaseResponse{
-		Status:  http.StatusOK,
-		Message: "Success updating cart!",
+	app.writeJSON(w, http.StatusOK, response.CartResponse{
+		BaseResponse: response.BaseResponse{
+			Status:  http.StatusOK,
+			Message: "Success updating cart!",
+		},
+		Cart: cart,
 	})
 }
 

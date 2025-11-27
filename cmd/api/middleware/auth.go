@@ -71,13 +71,13 @@ func Authentication(next http.Handler) http.Handler {
 		}
 
 		// Extract data from token
-		userId, _ := claims["user_id"].(int) // JWT stores numbers as int
+		userId, _ := claims["user_id"].(float64) // go standart store json numbers as float64
 		email, _ := claims["email"].(string)
 		isAdmin, _ := claims["is_admin"].(bool)
 
 		// Store the user data in the request context
 		ctx := context.WithValue(r.Context(), UserContextKey, map[string]any{
-			"user_id":  userId,
+			"user_id":  int(userId),
 			"email":    email,
 			"is_admin": isAdmin,
 		})

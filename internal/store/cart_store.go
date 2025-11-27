@@ -4,13 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"net/http"
-
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"github.com/ariefzainuri96/go-api-ecommerce/internal/utils"
 	"gorm.io/gorm"
+	"net/http"
 )
 
 type CartStore struct {
@@ -18,43 +17,64 @@ type CartStore struct {
 	gormDb *gorm.DB
 }
 
-func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest, userId int) error {
+func (s *CartStore) AddToCart(ctx context.Context, body request.AddToCartRequest, userId int) ([]entity.Cart, error) {
 	// query := `
 	// 	INSERT INTO carts (product_id, quantity, user_id)
 	// 	VALUES ($1, $2, $3);
 	// `
 
-	result := s.gormDb.WithContext(ctx).Create(&entity.Cart{
-		ProductId: body.ProductID,
-		UserId:    userId,
-		Quantity:  body.Quantity,
-	})
+	result := s.gormDb.
+		WithContext(ctx).
+		Create(&entity.Cart{
+			ProductId: body.ProductID,
+			UserId:    userId,
+			Quantity:  body.Quantity,
+		})
+
+	var carts []entity.Cart
 
 	if result.Error != nil {
-		return result.Error
+		return carts, result.Error
 	}
 
-	return nil
+	resultCart := s.gormDb.
+		WithContext(ctx).
+		Where(&entity.Cart{
+			UserId: userId,
+		}).
+		Preload("Product", nil).
+		Find(&carts)
+
+	if resultCart.Error != nil {
+		return carts, result.Error
+	}
+
+	return carts, nil
 }
 
 func (s *CartStore) DeleteFromCart(ctx context.Context, productID int) error {
-	rows, err := gorm.G[entity.Cart](s.gormDb).
-		Where(&entity.Cart{ProductId: productID}).
-		Delete(ctx)
+	results := s.gormDb.
+		WithContext(ctx).
+		Delete(&entity.Cart{
+			BaseEntity: entity.BaseEntity{
+				ID: uint(productID),
+			},
+		})
 
-	if err != nil {
-		return err
+	if results.Error != nil {
+		return results.Error
 	}
 
-	if rows == 0 {
-		return fmt.Errorf("no rows affected")
+	if results.RowsAffected == 0 {
+		return fmt.Errorf("no id found")
 	}
 
 	return nil
 }
 
 func (s *CartStore) GetCart(ctx context.Context, userID int, req request.PaginationRequest) (response.CartsResponse, error) {
-	query := s.gormDb.WithContext(ctx).
+	query := s.gormDb.
+		WithContext(ctx).
 		Model(&entity.Cart{}).
 		Where(entity.Cart{UserId: userID}).
 		Preload("Product", nil).
@@ -84,10 +104,17 @@ func (s *CartStore) GetCart(ctx context.Context, userID int, req request.Paginat
 	}, nil
 }
 
-func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int, quantity int) error {
-	result := s.gormDb.WithContext(ctx).
-		Model(&entity.Cart{}).
-		UpdateColumn("Quantity", quantity)
+func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int, data map[string]any) (entity.Cart, error) {
+	cart := entity.Cart{
+		BaseEntity: entity.BaseEntity{
+			ID: uint(id),
+		},
+	}
+
+	result := s.gormDb.
+		WithContext(ctx).
+		Model(&cart).
+		Updates(data)
 
 	// query := `
 	// 	UPDATE shopping_carts
@@ -98,8 +125,12 @@ func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int, quantity int
 	// _, err := s.db.ExecContext(ctx, query, quantity, id)
 
 	if result.Error != nil {
-		return result.Error
+		return entity.Cart{}, result.Error
 	}
 
-	return nil
+	if err := s.gormDb.WithContext(ctx).First(&cart, id).Error; err != nil {
+		return entity.Cart{}, err
+	}
+
+	return cart, nil
 }

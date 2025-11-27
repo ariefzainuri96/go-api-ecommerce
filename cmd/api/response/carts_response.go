@@ -9,3 +9,8 @@ type CartsResponse struct {
 	Carts      []entity.Cart      `json:"carts"`
 	Pagination PaginationMetadata `json:"pagination"`
 }
+
+type CartResponse struct {
+	BaseResponse
+	Cart entity.Cart `json:"cart"`
+}

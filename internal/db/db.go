@@ -20,18 +20,29 @@ func NewGorm(addr string) (*gorm.DB, error) {
 
 	if err != nil {
 		log.Fatalf("Failed to connect to the database with GORM: %v", err)
+		return nil, err
 	}
 
 	log.Println("Database connection successfully established with GORM.")
 
+	// --- Step 2: Create a Context for Startup Operations ---
+
+	// Set a timeout for the AutoMigrate operation itself (e.g., 30 seconds)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+
+	defer cancel()
+
 	// Optional: AutoMigrate creates/updates table based on the struct definition
 	// This is a powerful feature but use with caution in production.
 	// It's very useful for development.
-	err = db.AutoMigrate(&entity.Product{}, &entity.Cart{})
+	err = db.WithContext(ctx).AutoMigrate(&entity.Product{}, &entity.Cart{})
 
 	if err != nil {
 		log.Fatalf("Failed to perform auto migration: %v", err)
+		return nil, err
 	}
+
+	log.Println("Database migration completed successfully.")
 
 	return db, nil
 }
