@@ -38,11 +38,18 @@ func main() {
 		return
 	}
 
-	gormDb, err := db.NewGorm(os.Getenv("DB_ADDR"))
+	gormDb, errGorm := db.NewGorm(os.Getenv("DB_ADDR"))
+
+	if errGorm != nil {
+		log.Fatal("Error connecting to gorm database")
+		panic("Error connecting to gorm database")
+	}
+
 	db, err := db.New(os.Getenv("DB_ADDR"), 30, 30, "10m")
 
 	if err != nil {
 		log.Fatal("Error connecting to database")
+		panic("Error connecting to database")
 	}
 
 	defer db.Close()
