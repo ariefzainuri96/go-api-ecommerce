@@ -92,14 +92,20 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := app.store.ICart.GetCart(r.Context(), user["user_id"].(int), request)
+	carts, err := app.store.ICart.GetCart(r.Context(), user["user_id"].(int), request)
 
 	if err != nil {
 		app.respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, resp)
+	app.writeJSON(w, http.StatusOK, response.CartsResponse{
+		BaseResponse: response.BaseResponse{
+			Status: http.StatusOK,
+			Message: "Success",
+		},
+		Carts: carts,
+	})
 }
 
 // @Summary      Delete Cart

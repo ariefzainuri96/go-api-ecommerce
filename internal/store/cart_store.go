@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
-	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"github.com/ariefzainuri96/go-api-ecommerce/internal/utils"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 type CartStore struct {
@@ -72,7 +70,7 @@ func (s *CartStore) DeleteFromCart(ctx context.Context, productID int) error {
 	return nil
 }
 
-func (s *CartStore) GetCart(ctx context.Context, userID int, req request.PaginationRequest) (response.CartsResponse, error) {
+func (s *CartStore) GetCart(ctx context.Context, userID int, req request.PaginationRequest) ([]entity.Cart, error) {
 	query := s.gormDb.
 		WithContext(ctx).
 		Model(&entity.Cart{}).
@@ -91,17 +89,10 @@ func (s *CartStore) GetCart(ctx context.Context, userID int, req request.Paginat
 	result := utils.ApplyPagination[entity.Cart](query, req, searchAllQuery)
 
 	if result.Error != nil {
-		return response.CartsResponse{}, result.Error
+		return []entity.Cart{}, result.Error
 	}
 
-	return response.CartsResponse{
-		BaseResponse: response.BaseResponse{
-			Message: "Success",
-			Status:  http.StatusOK,
-		},
-		Carts:      result.Data,
-		Pagination: result.Pagination,
-	}, nil
+	return result.Data, nil
 }
 
 func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int, data map[string]any) (entity.Cart, error) {
@@ -128,7 +119,11 @@ func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int, data map[str
 		return entity.Cart{}, result.Error
 	}
 
-	if err := s.gormDb.WithContext(ctx).First(&cart, id).Error; err != nil {
+	if err := s.gormDb.
+		WithContext(ctx).
+		Preload("Product", nil).
+		First(&cart, id).
+		Error; err != nil {
 		return entity.Cart{}, err
 	}
 

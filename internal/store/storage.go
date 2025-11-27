@@ -23,7 +23,7 @@ type Storage struct {
 	}
 	ICart interface {
 		AddToCart(context.Context, request.AddToCartRequest, int) ([]entity.Cart, error)
-		GetCart(context.Context, int, request.PaginationRequest) (response.CartsResponse, error)
+		GetCart(context.Context, int, request.PaginationRequest) ([]entity.Cart, error)
 		DeleteFromCart(context.Context, int) error
 		UpdateQuantityCart(context.Context, int, map[string]any) (entity.Cart, error)
 	}
