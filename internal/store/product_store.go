@@ -4,11 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"net/http"
-
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
-	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"github.com/ariefzainuri96/go-api-ecommerce/internal/utils"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -36,7 +33,7 @@ func (s *ProductStore) AddProduct(ctx context.Context, body *request.AddProductR
 	return product, nil
 }
 
-func (s *ProductStore) GetProduct(ctx context.Context, req request.PaginationRequest) (response.ProductsResponse, error) {
+func (s *ProductStore) GetProduct(ctx context.Context, req request.PaginationRequest) (utils.PaginateResult[entity.Product], error) {
 	var products []entity.Product
 
 	query := s.gormDb.Find(&products)
@@ -55,17 +52,10 @@ func (s *ProductStore) GetProduct(ctx context.Context, req request.PaginationReq
 	result := utils.ApplyPagination[entity.Product](query, req, searchAllQuery)
 
 	if result.Error != nil {
-		return response.ProductsResponse{}, result.Error
+		return utils.PaginateResult[entity.Product]{}, result.Error
 	}
 
-	return response.ProductsResponse{
-		BaseResponse: response.BaseResponse{
-			Message: "Success",
-			Status:  http.StatusOK,
-		},
-		Products:   result.Data,
-		Pagination: result.Pagination,
-	}, nil
+	return result, nil
 }
 
 func (s *ProductStore) DeleteProduct(ctx context.Context, id uint) error {

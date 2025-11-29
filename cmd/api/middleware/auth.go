@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/utils"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -91,14 +92,34 @@ func AdminHandler(next http.HandlerFunc) http.HandlerFunc {
 		user, ok := GetUserFromContext(r)
 
 		if !ok {
-			http.Error(w, "Unauthorized, please re login!", http.StatusUnauthorized)
+			utils.RespondError(w, http.StatusUnauthorized, "Unauthorized, please re login!")
 			return
 		}
 
 		isAdmin := user["is_admin"].(bool)
 
 		if !isAdmin {
-			http.Error(w, "You are not authorized to perform this action!", http.StatusForbidden)
+			utils.RespondError(w, http.StatusForbidden, "You are not authorized to perform this action!")
+			return
+		}
+
+		next(w, r)
+	}
+}
+
+func UserHandler(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := GetUserFromContext(r)
+
+		if !ok {
+			utils.RespondError(w, http.StatusUnauthorized, "Unauthorized, please re login!")
+			return
+		}
+
+		isAdmin := user["is_admin"].(bool)		
+
+		if isAdmin {
+			utils.RespondError(w, http.StatusForbidden, "You are not authorized to perform this action!")
 			return
 		}
 

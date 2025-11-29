@@ -98,6 +98,7 @@ func (s *CartStore) UpdateQuantityCart(ctx context.Context, id int, data map[str
 		},
 	}
 
+	// update
 	result := s.gormDb.
 		WithContext(ctx).
 		Model(&cart).

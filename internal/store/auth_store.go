@@ -6,48 +6,50 @@ import (
 	"errors"
 	"log"
 
+	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/middleware"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
-	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type AuthStore struct {
-	db *sql.DB
+	db     *sql.DB
+	gormDb *gorm.DB
 }
 
-func (store *AuthStore) Login(ctx context.Context, body request.LoginRequest) (response.LoginData, error) {
-	query := `SELECT id, name, email, password, is_admin FROM users WHERE email = $1;`
-
-	row := store.db.QueryRowContext(ctx, query, body.Email)
-
-	var login response.LoginData
-	var password string
-	var isAdmin bool
-
-	err := row.Scan(&login.ID, &login.Name, &login.Email, &password, &isAdmin)
-
-	if err != nil {
-		return login, err
+func (store *AuthStore) Login(ctx context.Context, body request.LoginRequest) (entity.User, string, error) {
+	user := entity.User{
+		Email: body.Email,
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(password), []byte(body.Password))
+	err := store.gormDb.
+		// get data by condition from user instance, which is by email
+		Where(user).
+		// insert data to [user] address
+		First(&user).Error
+
+	// query := `SELECT id, name, email, password, is_admin FROM users WHERE email = $1;`
+
+	// row := store.db.QueryRowContext(ctx, query, body.Email)
+
+	// err := row.Scan(&login.ID, &login.Name, &login.Email, &password, &isAdmin)	
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
 
 	if err != nil {
-		return login, errors.New("invalid email or password")
+		return user, "", errors.New("invalid email or password")
 	}
 
-	log.Println("userid", login.ID)
+	log.Println("userid", user.ID)
 
-	token, err := middleware.GenerateToken(body.Email, isAdmin, login.ID)
+	token, err := middleware.GenerateToken(body.Email, user.IsAdmin, int(user.ID))
 
 	if err != nil {
-		return login, err
+		return user, "", err
 	}
 
-	login.Token = token
-
-	return login, nil
+	return user, token, nil
 }
 
 func (store *AuthStore) Register(ctx context.Context, body request.RegisterReq) error {

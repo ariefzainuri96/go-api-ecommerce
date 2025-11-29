@@ -24,6 +24,14 @@ import (
 // @Router       /cart/add		[post]
 func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 	var data request.AddToCartRequest
+
+	user, ok := middleware.GetUserFromContext(r)
+
+	if !ok {
+		utils.RespondError(w, http.StatusUnauthorized, "Unauthorized, please re login!")
+		return
+	}	
+
 	err := json.NewDecoder(r.Body).Decode(&data)
 
 	if err != nil {
@@ -31,13 +39,6 @@ func (app *application) addToCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-
-	user, ok := middleware.GetUserFromContext(r)
-
-	if !ok {
-		utils.RespondError(w, http.StatusUnauthorized, "Unauthorized, please re login!")
-		return
-	}
 
 	err = app.validator.Struct(data)
 
@@ -102,7 +103,7 @@ func (app *application) getCart(w http.ResponseWriter, r *http.Request) {
 			Status:  http.StatusOK,
 			Message: "Success",
 		},
-		Carts: result.Data,
+		Carts:      result.Data,
 		Pagination: result.Pagination,
 	})
 }
@@ -200,10 +201,10 @@ func (app *application) updateCart(w http.ResponseWriter, r *http.Request) {
 func (app *application) CartRouter() *http.ServeMux {
 	cartRouter := http.NewServeMux()
 
-	cartRouter.HandleFunc("POST /add", app.addToCart)
-	cartRouter.HandleFunc("DELETE /remove/{id}", app.deleteCart)
-	cartRouter.HandleFunc("PATCH /update/{id}", app.updateCart)
-	cartRouter.HandleFunc("GET /getall", app.getCart)
+	cartRouter.HandleFunc("POST /add", middleware.UserHandler(app.addToCart))
+	cartRouter.HandleFunc("DELETE /remove/{id}", middleware.UserHandler(app.deleteCart))
+	cartRouter.HandleFunc("PATCH /update/{id}", middleware.UserHandler(app.updateCart))
+	cartRouter.HandleFunc("GET /getall", middleware.UserHandler(app.getCart))
 
 	// Catch-all route for undefined paths
 	cartRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

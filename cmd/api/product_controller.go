@@ -86,7 +86,14 @@ func (app *application) getProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusOK, product)
+	utils.WriteJSON(w, http.StatusOK, response.ProductsResponse{
+		BaseResponse: response.BaseResponse{
+			Message: "Success",
+			Status:  http.StatusOK,
+		},
+		Products:   product.Data,
+		Pagination: product.Pagination,
+	})
 }
 
 // @Summary      Delete Product

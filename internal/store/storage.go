@@ -6,7 +6,6 @@ import (
 
 	entity "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/entity"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
-	response "github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"github.com/ariefzainuri96/go-api-ecommerce/internal/data"
 	"github.com/ariefzainuri96/go-api-ecommerce/internal/utils"
 	"gorm.io/gorm"
@@ -14,13 +13,13 @@ import (
 
 type Storage struct {
 	IProduct interface {
-		GetProduct(context.Context, request.PaginationRequest) (response.ProductsResponse, error)
+		GetProduct(context.Context, request.PaginationRequest) (utils.PaginateResult[entity.Product], error)
 		AddProduct(context.Context, *request.AddProductRequest) (entity.Product, error)
 		DeleteProduct(context.Context, uint) error
 		PatchProduct(context.Context, uint, map[string]any) (entity.Product, error)
 	}
 	IAuth interface {
-		Login(context.Context, request.LoginRequest) (response.LoginData, error)
+		Login(context.Context, request.LoginRequest) (entity.User, string, error)
 		Register(context.Context, request.RegisterReq) error
 	}
 	ICart interface {
@@ -40,7 +39,7 @@ type Storage struct {
 func NewStorage(db *sql.DB, gormDb *gorm.DB) Storage {
 	return Storage{
 		IProduct: &ProductStore{db, gormDb},
-		IAuth:    &AuthStore{db},
+		IAuth:    &AuthStore{db, gormDb},
 		ICart:    &CartStore{db, gormDb},
 		IOrder:   &OrderStore{db},
 	}
