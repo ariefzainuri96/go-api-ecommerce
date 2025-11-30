@@ -46,12 +46,3 @@ func CreateStack(middlewares ...Middleware) Middleware {
 		return next
 	}
 }
-
-// func CreateStack(middlewares ...Middleware) Middleware {
-// 	return func(next http.Handler) http.Handler {
-// 		for _, middleware := range middlewares {
-// 			next = middleware(next)
-// 		}
-// 		return next
-// 	}
-// }

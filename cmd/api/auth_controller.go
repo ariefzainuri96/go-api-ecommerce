@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	
+
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/request"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/response"
 	"github.com/ariefzainuri96/go-api-ecommerce/cmd/api/utils"
@@ -11,7 +11,7 @@ import (
 
 // @Summary      Login
 // @Description  Perform login
-// @Tags         login
+// @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        request	body	  request.LoginRequest	true "Login request"
@@ -37,35 +37,41 @@ func (app *application) login(w http.ResponseWriter, r *http.Request) {
 
 	user, token, err := app.store.IAuth.Login(r.Context(), data)
 
-	if err != nil {		
+	if err != nil {
 		utils.RespondError(w, http.StatusInternalServerError, "Invalid email/password!")
 		return
 	}
 
 	utils.WriteJSON(w, http.StatusOK, response.LoginResponse{
 		BaseResponse: response.BaseResponse{
-			Status: http.StatusOK,
+			Status:  http.StatusOK,
 			Message: "Success",
 		},
 		Data: response.LoginData{
-			ID: int(user.ID),
+			ID:    int(user.ID),
 			Token: token,
-			Name: user.Name,
+			Name:  user.Name,
 			Email: user.Email,
 		},
-	})	
+	})
 }
 
+// @Summary      Register
+// @Description  Perform register
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request		body	  request.RegisterReq	true "Register request"
+// @Success      200  			{object}  response.BaseResponse
+// @Failure      400  			{object}  response.BaseResponse
+// @Failure      404  			{object}  response.BaseResponse
+// @Router       /auth/register	[post]
 func (app *application) register(w http.ResponseWriter, r *http.Request) {
-	var baseResp response.BaseResponse
-
 	var data request.RegisterReq
 	err := json.NewDecoder(r.Body).Decode(&data)
+
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = "Invalid request"
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		utils.RespondError(w, http.StatusBadRequest, "Invalid request")
 		return
 	}
 	defer r.Body.Close()
@@ -73,29 +79,21 @@ func (app *application) register(w http.ResponseWriter, r *http.Request) {
 	err = app.validator.Struct(data)
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = err.Error()
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusBadRequest)
+		utils.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	err = app.store.IAuth.Register(r.Context(), data)
 
 	if err != nil {
-		baseResp.Status = http.StatusBadRequest
-		baseResp.Message = err.Error()
-		resp, _ := baseResp.MarshalBaseResponse()
-		http.Error(w, string(resp), http.StatusInternalServerError)
+		utils.RespondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	baseResp.Status = http.StatusOK
-	baseResp.Message = "Success register!"
-
-	resp, _ := baseResp.MarshalBaseResponse()
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
+	utils.WriteJSON(w, http.StatusOK, response.BaseResponse{
+		Status: http.StatusOK,
+		Message: "Success register account",
+	})
 }
 
 func (app *application) AuthRouter() *http.ServeMux {
